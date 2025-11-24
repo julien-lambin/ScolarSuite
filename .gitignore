@@ -14,6 +14,7 @@ Thumbs.db
 .DS_Store
 npm-debug.log
 error.log
+amelioration.txt
 
 # Tes dossiers de test (Visibles sur ton image)
 Commande_Ecole_*/

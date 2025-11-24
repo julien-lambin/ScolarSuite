@@ -1,0 +1,60 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <title>ScolarSuite - Saisie de commande</title>
+    <!-- {{> _head.html }} -->
+</head>
+<body>
+    <div class="app-layout">
+        <nav class="sidebar">
+            <!-- {{> _sidebar.html }} -->
+        </nav>
+
+        <!-- Contenu principal de la page -->
+        <main class="main-content">
+            <header class="order-header">
+                <div style="display: flex; align-items: center; gap: 1rem;">
+                    <!-- NOUVEAU BOUTON RETOUR -->
+                    <button id="header-back-btn" class="btn-secondary btn-icon-only" title="Retour">
+                        <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                            <path d="M16.1795 3.26875C15.7889 2.87823 15.1558 2.87823 14.7652 3.26875L8.12078 9.91322C6.94952 11.0845 6.94916 12.9833 8.11996 14.155L14.6903 20.7304C15.0808 21.121 15.714 21.121 16.1045 20.7304C16.495 20.3399 16.495 19.7067 16.1045 19.3162L9.53246 12.7442C9.14194 12.3536 9.14194 11.7205 9.53246 11.33L16.1795 4.68297C16.57 4.29244 16.57 3.65928 16.1795 3.26875Z" fill="currentColor"></path>
+                        </svg>
+                    </button>
+                    <h1 style="margin: 0; border-bottom: none;">Saisie de commande</h1>
+                </div>
+                <hr style="border: 0; border-top: 1px solid var(--border-color); margin-top: 1rem; margin-bottom: 2rem;">
+            </header>
+    
+            <section class="order-layout">
+                <div class="student-info-panel card">
+                    <!-- CORRECTION : ON AJOUTE L'ID ICI -->
+                    <div id="order-photo-container" class="order-photo-container">
+                        <div id="photo-placeholder" class="placeholder">
+                            <span>Chargement de la photo...</span>
+                        </div>
+                        <img id="student-photo" src="" alt="Photo de l'élève">
+                    </div>
+                    <h2 id="student-name">Chargement...</h2>
+                    <p id="student-category">Catégorie : ...</p>
+                </div>
+                <div class="product-list-panel card">
+                    <div id="product-list">
+                        <!-- Les produits seront insérés ici par JavaScript -->
+                    </div>
+                    <div class="order-total">
+                        <span>Total : </span>
+                        <span id="total-price">0.00 €</span>
+                    </div>
+                </div>
+            </section>
+            
+            <footer class="form-actions">
+                <button id="cancel-btn" class="btn-secondary">← Annuler</button>
+                <button id="save-btn" class="btn-primary">💾 Enregistrer</button>
+            </footer>
+        </main>
+    </div>
+
+    <script src="src/assets/js/order-renderer.js"></script>
+</body>
+</html>

@@ -1,0 +1,62 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <title>ScolarSuite - Détail de l'école</title>
+    <!-- {{> _head.html }} -->
+</head>
+<body>
+    <div class="app-layout">
+        <nav class="sidebar">
+            <!-- {{> _sidebar.html }} -->
+        </nav>
+
+        <!-- Contenu principal de la page -->
+        <main class="main-content">
+            <header class="school-header">
+                <div style="display: flex; align-items: center; gap: 1rem;">
+                    <h1 id="school-name-display" style="margin-bottom: 0;"><span class="icon">🏫</span> Chargement...</h1>
+                    <button id="edit-config-btn" class="btn-secondary" title="Modifier la configuration" style="padding: 0.5rem 0.8rem;">⚙️ Configurer</button>
+                </div>
+
+                <!-- NOUVEAU : BARRE DE RECHERCHE -->
+                <div class="search-container">
+                    <input type="text" id="student-search-input" placeholder="Rechercher un élève..." autocomplete="off">
+                </div>
+
+                <div class="total-amount-display" id="total-amount-display">0.00 €</div>
+            </header>
+    
+            <nav class="category-nav">
+                <h2>Sélectionnez une classe ou une catégorie</h2>
+                <div class="category-buttons" id="category-buttons">
+                    <button class="category-btn active">Chargement...</button>
+                </div>
+            </nav>
+    
+            <section class="trombinoscope-grid" id="trombinoscope-grid">
+                <div class="student-card-placeholder">
+                    <p>Sélectionnez une catégorie pour afficher les photos.</p>
+                </div>
+            </section>
+    
+            <footer class="final-actions">
+                <!-- Le contenu du footer est géré dynamiquement par JS -->
+            </footer>
+        </main>
+    </div>
+
+    <!-- MODALE DE PROGRESSION (Cachée par défaut) -->
+    <div id="processing-modal" class="modal-overlay" style="display: none;">
+        <div class="modal-content">
+            <h3>Traitement en cours...</h3>
+            <div class="progress-container">
+                <progress id="process-progress-bar" value="0" max="100"></progress>
+                <p id="process-status-text">Préparation des fichiers...</p>
+            </div>
+            <button id="cancel-process-btn" class="btn-danger-outline">Annuler le traitement</button>
+        </div>
+    </div>
+    
+    <script src="src/assets/js/school-renderer.js"></script>
+</body>
+</html>

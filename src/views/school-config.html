@@ -1,0 +1,88 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <title>ScolarSuite - Configuration de l'école</title>
+    <!-- {{> _head.html }} -->
+</head>
+<body>
+    <div class="app-layout">
+        <nav class="sidebar">
+            <!-- {{> _sidebar.html }} -->
+        </nav>
+
+        <main class="main-content">
+            <header class="main-header">
+                <!-- Titre éditable -->
+                <div class="config-title-row" style="display: flex; align-items: center; gap: 1rem; margin-bottom: 1rem;">
+                    <h1 style="margin: 0; white-space: nowrap;">Configuration :</h1>
+                    <input type="text" id="school-name-input" class="school-name-input" value="Chargement..." style="font-size: 1.5rem; font-weight: 600; padding: 0.2rem 0.5rem; border: 1px solid transparent; background: transparent; width: 100%;">
+                </div>
+                <style>
+                    /* Style rapide pour l'input de titre */
+                    .school-name-input:hover, .school-name-input:focus {
+                        border-color: #ced4da !important;
+                        background-color: #fff !important;
+                        border-radius: 4px;
+                    }
+                </style>
+            </header>
+            
+            <div class="content-body">
+                <p class="intro-text">Configurez d'abord les produits vendus, puis le contenu technique des pochettes.</p>
+
+                <form id="school-config-form">
+                    
+                    <!-- SECTION 1 : CATALOGUE VENTE -->
+                    <section class="card">
+                        <div class="card-header-flex">
+                            <h2>1. Catalogue Produits (Vente au détail)</h2>
+                            <button type="button" id="add-product-btn" class="btn-secondary small">+ Nouveau Produit</button>
+                        </div>
+                        
+                        <div class="config-catalog-header">
+                            <span>Produit</span>
+                            <span>Dossier Source</span>
+                            <span>Dossier Export (Vente seule)</span>
+                            <span>Type</span>
+                            <span>Prix (€)</span>
+                            <span>Actif</span>
+                        </div>
+                        <div id="product-list-container">
+                            <!-- Liste générée par JS -->
+                        </div>
+                    </section>
+
+                    <!-- SECTION 2 : COMPOSITION DES PACKS -->
+                    <section class="card" id="packs-section">
+                        <h2>2. Contenu des Pochettes complétes</h2>
+                        <p style="color: var(--text-muted-color); margin-bottom: 1rem; font-size: 0.9rem;">
+                            Définissez ici quels fichiers sont copiés lorsqu'un client achète une pochette complète complet. 
+                            Vous pouvez ajouter des éléments qui ne sont pas vendus seuls (ex: Pochette).
+                        </p>
+                        
+                        <div id="packs-container">
+                            <!-- Les conteneurs de chaque pack seront générés ici -->
+                        </div>
+                    </section>
+
+                    <footer class="final-actions">
+                        <!-- Zone de statut à gauche (Cachée par défaut) -->
+                        <div id="processing-status" class="footer-status" style="display: none;">
+                            <span id="progress-text" class="status-label">Préparation...</span> 
+                            <progress id="config-progress-bar" value="0" max="100"></progress>
+                        </div>
+                        
+                        <!-- Groupe de boutons à droite -->
+                        <div class="footer-buttons" style="display: flex; gap: 1rem; margin-left: auto;">
+                            <button type="button" id="cancel-config-btn" class="btn-secondary">Annuler</button>
+                            <button type="submit" class="btn-primary" style="min-width: 200px;">💾 Enregistrer la Configuration</button>
+                        </div>
+                    </footer>
+                </form>
+            </div>
+        </main>
+    </div>
+
+    <script src="src/assets/js/school-config-renderer.js"></script>
+</body>
+</html>

@@ -1,0 +1,30 @@
+# Dépendances (On ne les envoie jamais, on fait npm install)
+node_modules/
+
+# Dossiers de build (Générés par npm run dist)
+dist/
+out/
+
+# Base de données locale (Tes données perso)
+*.sqlite
+*.sqlite-journal
+
+# Fichiers systèmes & Logs
+Thumbs.db
+.DS_Store
+npm-debug.log
+error.log
+
+# Tes dossiers de test (Visibles sur ton image)
+Commande_Ecole_*/
+Ecole Halluin*/
+Photo test bdc/
+Test gen excel/
+
+# Tes archives de sauvegarde (Trop lourd)
+*.rar
+*.zip
+*.7z
+
+# Dossiers temporaires VS Code
+.vscode/

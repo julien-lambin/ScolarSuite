@@ -1,0 +1,113 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <title>ScolarSuite - Éditeur de Modèles</title>
+    <!-- {{> _head.html }} -->
+</head>
+<body>
+    <div class="app-layout">
+        <nav class="sidebar">
+            <!-- {{> _sidebar.html }} -->
+        </nav>
+
+        <main class="main-content">
+            <header class="main-header">
+                <div style="display: flex; align-items: center; gap: 1rem;">
+                    <button id="btn-back" class="btn-secondary btn-icon-only">←</button>
+                    <h1>Configuration des Modèles Excel</h1>
+                </div>
+            </header>
+            
+<div class="content-body">
+                <div class="card">
+                    <!-- NOUVELLE STRUCTURE AVEC CLASSES -->
+                    <div class="template-editor-layout">
+                        
+                        <!-- Liste des modèles -->
+                        <div class="template-list-panel">
+                            <ul id="template-list">
+                                <!-- Liste générée -->
+                            </ul>
+                            <button id="btn-new-template" class="btn-secondary full-width" style="margin-top: 1rem;">+ Nouveau Modèle</button>
+                        </div>
+
+                        <!-- Formulaire d'édition -->
+                        <div class="template-form-panel">
+                            <form id="template-form" style="display: none;">
+                                <div class="form-group">
+                                    <label>Clé unique (ID technique)</label>
+                                    <input type="text" id="tpl-key" readonly style="background: #f0f0f0; color: #666;">
+                                </div>
+                                
+                                <div class="form-group">
+                                    <label>Nom affiché dans le menu</label>
+                                    <input type="text" id="tpl-label" required>
+                                </div>
+
+                                <div class="form-group">
+                                    <label>Mode de séparation des pages</label>
+                                    <select id="tpl-split">
+                                        <option value="false">Séquentiel (Standard)</option>
+                                        <option value="true">Gauche / Droite (Type Noël)</option>
+                                    </select>
+                                </div>
+
+                                <div class="form-group">
+                                    <label>Largeur Photo (pixels)</label>
+                                    <input type="number" id="tpl-width" required>
+                                </div>
+
+                                <hr style="margin: 1.5rem 0; border: 0; border-top: 1px solid #eee;">
+
+                                <h3>Position Photo 1 (Gauche/Haut)</h3>
+                                <div class="coords-group">
+                                    <div class="form-group">
+                                        <label>Colonne (0=A, 1=B...)</label>
+                                        <input type="number" id="tpl-col1">
+                                    </div>
+                                    <div class="form-group">
+                                        <label>Ligne (0=1, 1=2...)</label>
+                                        <input type="number" id="tpl-row1">
+                                    </div>
+                                </div>
+
+                                <h3>Position Photo 2 (Droite/Bas)</h3>
+                                <div class="coords-group">
+                                    <div class="form-group">
+                                        <label>Colonne</label>
+                                        <input type="number" id="tpl-col2">
+                                    </div>
+                                    <div class="form-group">
+                                        <label>Ligne</label>
+                                        <input type="number" id="tpl-row2">
+                                    </div>
+                                </div>
+
+                                <hr style="margin: 1.5rem 0; border: 0; border-top: 1px solid #eee;">
+
+                                <div class="form-group">
+                                    <label>Configuration des Placeholders (JSON)</label>
+                                    <textarea id="tpl-placeholders" rows="6" style="width: 100%; font-family: monospace; border: 1px solid #ced4da; border-radius: 6px; padding: 0.5rem;"></textarea>
+                                </div>
+
+                                <!-- ACTIONS -->
+                                <div class="form-actions-spaced">
+                                    <button type="button" id="btn-delete-template" class="btn-danger-text">Supprimer ce modèle</button>
+                                    <button type="submit" class="btn-primary">Enregistrer les modifications</button>
+                                </div>
+                            </form>
+                            
+                            <!-- Message vide -->
+                            <div id="empty-state" style="text-align: center; color: #888; margin-top: 3rem;">
+                                <p>Sélectionnez un modèle à gauche pour l'éditer.</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+        </main>
+    </div>
+    <script src="src/assets/js/template-editor-renderer-bdc.js"></script>
+</body>
+</html>

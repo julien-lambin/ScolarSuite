@@ -1,0 +1,1293 @@
+/* src/assets/css/main.css */
+
+/* --- DÉCLARATION DES POLICES LOCALES --- */
+/* Poids 100 - Thin */
+@font-face {
+    font-family: 'Poppins';
+    src: url('../fonts/Poppins-Thin.ttf') format('truetype');
+    font-weight: 100;
+    font-style: normal;
+}
+
+/* Poids 300 - Light */
+@font-face {
+    font-family: 'Poppins';
+    src: url('../fonts/Poppins-Light.ttf') format('truetype');
+    font-weight: 300;
+    font-style: normal;
+}
+
+/* Poids 400 - Regular */
+@font-face {
+    font-family: 'Poppins';
+    src: url('../fonts/Poppins-Regular.ttf') format('truetype');
+    font-weight: 400;
+    font-style: normal;
+}
+
+/* Poids 500 - Medium */
+@font-face {
+    font-family: 'Poppins';
+    src: url('../fonts/Poppins-Medium.ttf') format('truetype');
+    font-weight: 500;
+    font-style: normal;
+}
+
+/* Poids 600 - SemiBold */
+@font-face {
+    font-family: 'Poppins';
+    src: url('../fonts/Poppins-SemiBold.ttf') format('truetype');
+    font-weight: 600;
+    font-style: normal;
+}
+
+/* Poids 700 - Bold */
+@font-face {
+    font-family: 'Poppins';
+    src: url('../fonts/Poppins-Bold.ttf') format('truetype');
+    font-weight: 700;
+    font-style: normal;
+}
+
+/* --- Réinitialisation et Variables Globales --- */
+:root {
+    --primary-color: #3264FE;
+    --primary-hover-color: #3b55b5;
+    --green-color: #28a745;
+    --green-hover-color: #218838;
+    --background-color: #eff0f1; /* #F8F9FA; */
+    --sidebar-bg-color: #FFFFFF;
+    --card-bg-color: #FFFFFF;
+    --text-color: #212529;
+    --text-muted-color: #6C757D;
+    --border-color: #dde0e2; /* #E9ECEF; */
+    --font-family: 'Poppins', sans-serif;
+}
+
+* {
+    box-sizing: border-box;
+    margin: 0;
+    padding: 0;
+}
+
+body {
+    font-family: var(--font-family);
+    background-color: var(--background-color);
+    color: var(--text-color);
+    font-size: 16px;
+    padding: 0; 
+    font-weight: 400; /* Poids par défaut */
+}
+
+/* --- Layout Principal (pour toutes les pages) --- */
+.app-layout {
+    display: flex;
+    height: 100vh;
+}
+
+.sidebar {
+    width: 80px;
+    background-color: var(--sidebar-bg-color);
+    border-right: 1px solid var(--border-color);
+    padding: 1rem 0;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    flex-shrink: 0;
+}
+
+.sidebar-nav {
+    list-style: none;
+    width: 100%;
+}
+
+.nav-item a {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 1rem;
+    color: var(--text-muted-color);
+    text-decoration: none;
+    border-radius: 8px;
+    margin: 0.5rem 0.5rem;
+    transition: background-color 0.2s, color 0.2s;
+}
+
+.nav-item.active a {
+    background-color: var(--primary-color);
+    color: white;
+}
+
+.nav-item:not(.active) a:hover {
+    background-color: var(--background-color);
+}
+
+.nav-icon {
+    font-size: 1.5rem;
+    width: 28px;
+}
+
+.nav-text {
+    display: none;
+}
+
+.main-content {
+    flex-grow: 1;
+    padding: 2rem 3rem;
+    overflow-y: auto;
+}
+
+.main-header h1 {
+    font-size: 1.75rem;
+    margin-bottom: 2rem;
+    font-weight: 600; /* Utilisation explicite du SemiBold */
+}
+
+/* --- Composants Communs --- */
+.card {
+    background-color: var(--card-bg-color);
+    border-radius: 12px;
+    padding: 2rem;
+    margin-bottom: 2rem;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+}
+
+.card h2 {
+    font-size: 1.25rem;
+    margin-bottom: 1.5rem;
+    font-weight: 500; /* Medium */
+}
+
+/* Formulaires */
+.form-group {
+    margin-bottom: 1.5rem;
+}
+
+.form-group label {
+    display: block;
+    font-weight: 500; /* Medium pour les labels, plus élégant que le bold standard */
+    margin-bottom: 0.5rem;
+}
+
+input[type="text"], select {
+    width: 100%;
+    padding: 0.75rem 1rem;
+    border: 1px solid #ced4da;
+    border-radius: 8px;
+    font-size: 1rem;
+    background-color: #f8f9fa;
+    font-family: var(--font-family);
+}
+
+input[type="text"]:focus {
+    outline: none;
+    border-color: var(--primary-color);
+    box-shadow: 0 0 0 3px rgba(74, 105, 226, 0.2);
+}
+
+input[readonly] {
+    background-color: #e9ecef;
+    cursor: default;
+}
+
+.input-group {
+    display: flex;
+    gap: 0.5rem;
+}
+
+.input-group input {
+    flex-grow: 1;
+}
+
+/* Boutons */
+.btn-primary {
+    padding: 0.75rem 1.5rem;
+    font-size: 1rem;
+    font-weight: 500; /* Medium */
+    color: #fff;
+    background-color: var(--primary-color);
+    border: none;
+    border-radius: 8px;
+    cursor: pointer;
+    transition: background-color 0.2s;
+    font-family: var(--font-family);
+}
+
+.btn-primary:hover {
+    background-color: var(--primary-hover-color);
+}
+
+.btn-primary.full-width {
+    width: 100%;
+    padding-top: 1rem;
+    padding-bottom: 1rem;
+}
+
+.btn-secondary {
+    padding: 0.75rem 1.5rem;
+    font-size: 1rem;
+    font-weight: 500;
+    color: #fff;
+    background-color: #6c747e;
+    border: 0px;
+    border-radius: 8px;
+    cursor: pointer;
+    transition: background-color 0.2s;
+    font-family: var(--font-family);
+}
+
+.btn-secondary:hover {
+    background-color: #5f666e;
+}
+
+.btn-primary-green {
+    padding: 0.8rem 1.5rem;
+    font-size: 1.1rem;
+    font-weight: 600;
+    color: #fff;
+    background-color: var(--green-color);
+    border: none;
+    border-radius: 8px;
+    cursor: pointer;
+    transition: background-color 0.2s;
+    font-family: var(--font-family);
+}
+
+.btn-primary-green:hover {
+    background-color: var(--green-hover-color);
+}
+
+/* --- Page d'Accueil (index.html) --- */
+.school-list .school-item, .school-item-placeholder {
+    background-color: #f7fafc;
+    border: 1px solid var(--border-color);
+    padding: 1rem 1.5rem;
+    border-radius: 8px;
+    cursor: pointer;
+    transition: background-color 0.2s, border-color 0.2s;
+    margin-bottom: 0.75rem;
+    font-weight: 500;
+    
+    /* NOUVEAU : Flexbox pour aligner texte et bouton */
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.school-list .school-item:hover {
+    background-color: #edf2f7;
+    border-color: #cbd5e0;
+}
+
+/* Style du bouton config dans la liste */
+.btn-school-config {
+    background-color: transparent;
+    border: 1px solid #ced4da;
+    color: var(--text-muted-color);
+    padding: 0.4rem 0.8rem;
+    border-radius: 6px;
+    font-size: 0.9rem;
+    cursor: pointer;
+    transition: all 0.2s;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    font-family: var(--font-family);
+}
+
+.btn-school-config:hover {
+    background-color: #fff;
+    border-color: var(--primary-color);
+    color: var(--primary-color);
+    box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+}
+
+
+/* --- Page École / Trombinoscope (school.html) --- */
+.container { 
+    max-width: 1100px;
+    margin: 0 auto;
+}
+
+.school-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 2rem;
+    border-bottom: 1px solid var(--border-color);
+    padding-bottom: 1rem;
+}
+
+.total-amount-display {
+    font-size: 1.5rem;
+    font-weight: 700; /* Bold */
+    color: var(--primary-color);
+    background-color: #e7f3ff;
+    padding: 0.5rem 1rem;
+    border-radius: 8px;
+}
+
+.category-nav h2 {
+    font-size: 1.25rem;
+    margin-bottom: 1rem;
+    font-weight: 500;
+}
+
+.category-buttons {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.75rem;
+    margin-bottom: 2rem;
+}
+
+.category-btn {
+    padding: 0.6rem 1rem;
+    font-size: 0.9rem;
+    font-weight: 500;
+    border: 1px solid #ced4da;
+    border-radius: 10px;
+    background-color: var(--card-bg-color);
+    cursor: pointer;
+    transition: all 0.2s;
+    font-family: var(--font-family);
+}
+
+.category-btn:hover {
+    background-color: #edf2f7;
+    border-color: #a0aec0;
+}
+
+.category-btn.active {
+    background-color: var(--primary-color);
+    color: #fff;
+    border-color: var(--primary-color);
+}
+
+.category-btn.special {
+    background-color: #e6fffa;
+    border-color: #38b2ac;
+    color: #2c7a7b;
+}
+
+.category-btn.special.active {
+    background-color: #38b2ac;
+    color: #fff;
+    border-color: #38b2ac;
+}
+
+.trombinoscope-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
+    gap: 1rem;
+    margin-top: 1rem;
+}
+
+.trombinoscope-grid.layout-block {
+    display: block;
+}
+
+/* --- Styles pour le Trombinoscope --- */
+.student-card {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    text-align: center;
+    transition: transform 0.2s;
+}
+
+.student-photo-container {
+    position: relative;
+    width: 100%;
+    aspect-ratio: 3 / 4;
+    border-radius: 8px;
+    overflow: hidden;
+    margin-bottom: 0.5rem;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+    background-color: #f0f2f5; 
+}
+
+.student-photo-container img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    opacity: 0;
+    transition: opacity 0.3s ease-in-out;
+}
+
+.student-photo-container img.loaded {
+    opacity: 1;
+}
+
+.student-card:hover {
+    transform: scale(1.05);
+}
+
+.order-check-mark {
+    position: absolute;
+    top: 5px;
+    right: 5px;
+    padding: 2px;
+    font-size: 1rem;
+    line-height: 1;
+}
+
+.student-name {
+    font-size: 0.85rem;
+    font-weight: 500;
+    word-break: break-word;
+}
+
+.group-order-container {
+    padding: 1rem;
+    border: 1px solid var(--border-color);
+    border-radius: 8px;
+}
+.group-order-container h3 { margin-top: 0; font-weight: 600; }
+.group-order-container p { margin-bottom: 1.5rem; }
+.group-save-btn { margin-top: 1.5rem; width: auto; padding: 0.6rem 1.5rem; }
+
+.final-actions {
+    /* On s'assure que le flexbox espace bien les éléments */
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding-top: 1.5rem;
+    border-top: 1px solid var(--border-color);
+    margin-top: 2rem;
+}
+
+.final-actions {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding-top: 1.5rem;
+    border-top: 1px solid var(--border-color);
+    margin-top: 2rem;
+    min-height: 3rem; /* Garde la hauteur même si le statut est caché */
+}
+
+.footer-status {
+    display: flex;
+    flex-direction: column;
+    gap: 0.3rem;
+    font-size: 0.85rem;
+    color: var(--text-color);
+    width: 300px; 
+}
+
+/* Style de la barre de progression (Bleu) */
+.footer-status progress {
+    width: 100%;
+    height: 10px;
+    border-radius: 5px;
+    -webkit-appearance: none; /* Nécessaire pour styliser sur Chrome/Electron */
+    appearance: none;
+}
+
+/* Fond de la barre (Gris clair) */
+.footer-status progress::-webkit-progress-bar {
+    background-color: #e9ecef;
+    border-radius: 5px;
+}
+
+/* Valeur de la barre (Bleu Primaire) */
+.footer-status progress::-webkit-progress-value {
+    background-color: var(--primary-color);
+    border-radius: 5px;
+    transition: width 0.2s ease;
+}
+
+.footer-status .success-msg {
+    color: var(--green-color);
+    font-weight: 600;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+
+/* --- Page de Commande (order.html) --- */
+.order-header h1 {
+    font-size: 1.75rem;
+    margin-bottom: 2rem;
+    border-bottom: 1px solid var(--border-color);
+    /* padding-bottom: 1rem; */
+    font-weight: 600;
+}
+
+.order-layout {
+    display: flex;
+    gap: 2rem;
+}
+
+.student-info-panel {
+    display: flex;
+    flex-direction: column;
+    flex-basis: 20%;
+    text-align: center;
+    align-items: center;
+}
+.student-info-panel img {
+    max-width: 100%;
+    border-radius: 8px;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+}
+.student-info-panel h2 {
+    font-size: 1.25rem;
+    border-bottom: none;
+    margin-bottom: 0.5rem;
+    font-weight: 600;
+}
+.student-info-panel p {
+    color: var(--text-muted-color);
+    font-weight: 300;
+}
+
+.product-list-panel {
+    flex-basis: 80%;
+}
+
+#product-list {
+    gap: 0.75rem;
+    display: flex;
+    flex-direction: column;
+}
+
+/* Structure principale de la ligne produit (équivalent à ton .form-group) */
+.product-item-row {
+    position: relative;
+    display: flex;
+    flex-direction: column; /* Empilement vertical : Ligne 1 (Titre/Compteur) + Ligne 2 (Select) */
+    padding: 1rem;
+    border: 1px solid #dee2e6;
+    border-radius: 0.5rem;
+    background-color: #fff;
+    transition: all 0.2s;
+}
+
+.product-item-row:hover {
+    border-color: var(--primary-color);
+    box-shadow: 0 0 0 3px rgba(13, 110, 253, 0.1);
+}
+
+/* Ligne du haut : Titre à gauche, Compteur à droite (équivalent à ton .form-group-content) */
+.product-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    width: 100%;
+}
+
+.product-name {
+    font-weight: 500;
+    display: flex;
+    align-items: center;
+}
+
+/* Gestion du compteur */
+.quantity-selector {
+    display: flex;
+    align-items: center;
+}
+
+.quantity-btn {
+    border: none;
+    color: white;
+    background-color: var(--primary-color);
+    width: 37px;
+    height: 37px;
+    font-size: 1.4rem;
+    font-weight: bold;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: background-color 0.2s;
+}
+
+.quantity-btn:hover { background-color: #1b64cf; }
+.quantity-btn.minus { border-radius: 0.375rem 0 0 0.375rem; }
+.quantity-btn.plus { border-radius: 0 0.375rem 0.375rem 0; }
+
+.quantity-input {
+    width: 60px; /* Un peu plus large comme demandé */
+    height: 37px;
+    text-align: center;
+    border: 1px solid #ced4da; /* Bordure complète */
+    border-left: none;
+    border-right: none;
+    font-size: 1rem;
+    background-color: white !important;
+    -moz-appearance: textfield;
+    font-family: var(--font-family);
+    font-weight: 500;
+}
+.quantity-input::-webkit-outer-spin-button,
+.quantity-input::-webkit-inner-spin-button { -webkit-appearance: none; margin: 0; }
+
+
+/* Ligne du bas : Sélecteur (équivalent à ton .fratrie-selector) */
+.class-selector-wrapper {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    margin-top: 0.75rem; /* Espace sous le compteur */
+    width: 100%;
+}
+
+.class-selector-wrapper label {
+    font-size: 0.85rem;
+    color: var(--text-muted-color);
+    margin-bottom: 0;
+    white-space: nowrap;
+}
+
+.class-selector {
+    flex-grow: 1; /* Prend tout l'espace restant */
+    border: 1px solid #dee2e6;
+    font-size: 0.8rem;
+    padding: 0.25rem 0.5rem;
+    border-radius: 0.375rem;
+    font-family: var(--font-family);
+    background-color: #fff;
+    color: #495057;
+}
+
+.class-selector:disabled {
+    background-color: #e9ecef;
+    color: #6c757d;
+    cursor: not-allowed;
+    border-color: #e9ecef;
+}
+
+/* Boutons d'ajout/suppression de ligne (Add/Remove row) */
+.add-row-btn {
+    margin-right: 10px; /* Espace entre le bouton + et le nom */
+    width: 24px;
+    height: 24px;
+    border-radius: 50%;
+    background-color: var(--primary-color);
+    color: white;
+    font-size: 1.2rem;
+    line-height: 1;
+    border: none;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    /* On l'affiche toujours s'il est là, pas besoin de hover */
+}
+
+
+.order-total {
+    display: flex;
+    justify-content: flex-end;
+    align-items: center;
+    margin-top: 1.5rem;
+    font-size: 1.5rem;
+    font-weight: 700;
+    color: var(--primary-color);
+}
+
+.form-actions {
+    display: flex;
+    justify-content: space-between;
+}
+
+
+/* --- Système anti-pop-in de contenu --- */
+.content-loading {
+    opacity: 0;
+    visibility: hidden;
+    transition: opacity 0.2s ease-in;
+}
+
+.content-loaded {
+    opacity: 1;
+    visibility: visible;
+}
+
+
+.order-photo-container {
+    position: relative;
+    width: 100%;
+    aspect-ratio: 3 / 4;
+    background-color: #f0f2f5;
+    border-radius: 8px;
+    margin-bottom: 1rem;
+    overflow: hidden;
+}
+
+.order-photo-container img {
+    display: block; 
+    width: 100%;
+    height: auto;
+    object-fit: cover;
+    opacity: 0;
+    transition: opacity 0.1s ease-in-out;
+}
+
+.order-photo-container .placeholder {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    width: 100%;
+    min-height: 250px; 
+    color: var(--text-muted-color);
+    font-weight: 300; /* Light */
+}
+
+.order-photo-container img.loaded {
+    opacity: 1;
+}
+
+/* Bouton pour ajouter une nouvelle ligne */
+.add-row-btn {
+    position: absolute;
+    padding: 0px;
+    right: -13px;
+    top: -3%;
+    transform: translateY(-50%);
+    width: 28px;
+    height: 28px;
+    border-radius: 50%;
+    background-color: var(--primary-color);
+    color: white;
+    font-size: 1.5rem;
+    line-height: 1;
+    border: 2px solid white;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    opacity: 0;
+    transition: opacity 0.2s;
+}
+
+.product-item-row:hover .add-row-btn {
+    opacity: 1;
+}
+
+/* Bouton pour supprimer une ligne clonée */
+.remove-row-btn {
+    background-color: #dc3545;
+    position: absolute;
+    padding: 0px;
+    top: -3%;
+    right: 30px;
+    transform: translateY(-50%);
+    width: 28px;
+    height: 28px;
+    border-radius: 50%;
+    color: white;
+    font-size: 1.5rem;
+    line-height: 1;
+    border: 2px solid white;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    opacity: 0;
+    transition: opacity 0.2s;
+}
+
+.product-item-row:hover .remove-row-btn {
+    opacity: 1;
+}
+
+#product-list {
+    gap: 0.75rem;
+    display: flex;
+    flex-direction: column;
+}
+
+
+.group-orders-list {
+    display: flex;
+    flex-direction: column;
+    gap: 1rem; /* Espacement entre les lignes */
+}
+
+/* On surcharge le style par défaut de .product-item-row pour cette vue spécifique */
+.product-item-row.group-item {
+    display: flex;
+    flex-direction: row; /* Alignement horizontal */
+    justify-content: space-between; /* Titre à gauche, Compteur à droite */
+    align-items: center; /* Centrage vertical */
+    padding: 1rem 1.5rem;
+    padding-right: 1.5rem; /* On remet un padding normal */
+}
+
+/* On remet le compteur dans le flux normal (plus de position absolute) */
+.product-item-row.group-item .quantity-selector {
+    position: static; 
+    margin-top: 0;
+}
+
+.product-item-row.group-item .product-name {
+    margin-bottom: 0; /* On enlève la marge du bas */
+}
+
+.final-actions.no-border {
+    border-top: none;
+    padding-top: 0;
+    /* On peut ajuster le margin-top si besoin, mais ta capture ne le montrait pas désactivé */
+}
+
+
+/* --- STYLES PAGE CONFIGURATION --- */
+
+.intro-text {
+    margin-bottom: 1.5rem;
+    color: var(--text-muted-color);
+}
+
+.card-header-flex {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 1.5rem;
+}
+
+/* SECTION 1 : CATALOGUE VENTE (Grille du Haut) */
+/* Nom | Dossier Source | Dossier Export | Type | Prix | Actif */
+.config-catalog-header {
+    display: grid;
+    grid-template-columns: minmax(200px, 1fr) 140px 140px 90px 90px 70px;
+    gap: 0.5rem;
+    padding: 0.75rem 1rem;
+    background-color: #e3f2fd; /* Bleu clair pour distinguer */
+    border-radius: 8px 8px 0 0;
+    font-weight: 600;
+    font-size: 0.8rem;
+    color: #0d47a1;
+    align-items: center;
+    text-align: center;
+}
+
+.config-catalog-header span:first-child { text-align: left; }
+
+.config-catalog-row {
+    display: grid;
+    grid-template-columns: minmax(200px, 1fr) 140px 140px 90px 90px 70px;
+    gap: 0.5rem;
+    padding: 0.75rem 1rem;
+    border-bottom: 1px solid var(--border-color);
+    align-items: center;
+    background-color: #fff;
+}
+
+/* SECTION 2 : COMPOSITION PACK (Grille du Bas) */
+/* Nom Élément | Dossier Source | Dossier Export | Action */
+/* Grille du pack : Nom | Qté | Source | Dest | Action */
+.config-pack-header {
+    display: grid;
+    grid-template-columns: minmax(200px, 1fr) 60px 140px 140px 60px; /* Ajout colonne 60px */
+    gap: 0.5rem;
+    padding: 0.75rem 1rem;
+    background-color: #f1f3f5;
+    border-radius: 8px 8px 0 0;
+    font-weight: 600;
+    font-size: 0.8rem;
+    color: var(--text-muted-color);
+    align-items: center;
+    text-align: center;
+}
+
+.config-pack-row {
+    display: grid;
+    grid-template-columns: minmax(200px, 1fr) 60px 140px 140px 60px; /* Idem */
+    gap: 0.5rem;
+    padding: 0.5rem 1rem;
+    border-bottom: 1px solid var(--border-color);
+    align-items: center;
+    background-color: #fff;
+}
+
+/* Style colonne quantité */
+.col-qty {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    padding: 0 5px; /* Petite marge interne */
+}
+
+.col-qty input {
+    width: 100%; /* Prend toute la place dispo dans la colonne */
+    max-width: 50px; /* Limite la largeur pour ne pas déborder */
+    text-align: center;
+    padding: 0.4rem 0; /* Réduit le padding horizontal */
+    height: 32px; /* Fixe la hauteur pour l'aligner avec les selects */
+    margin: 0;
+}
+
+.config-pack-header span:first-child { text-align: left; }
+
+
+/* STYLES COMMUNS */
+.row-hover:hover { background-color: #f8f9fa; }
+
+.col-name { display: flex; align-items: center; }
+.col-name input { width: 100%; font-weight: 500; }
+
+.col-type, .col-price, .col-active, .col-action { 
+    display: flex; justify-content: center; align-items: center; 
+}
+
+input[type="text"], input[type="number"], select {
+    /* width: 100%; */
+    padding: 0.4rem;
+    font-size: 0.85rem;
+    border: 1px solid #ced4da;
+    border-radius: 4px;
+    background-color: white;
+}
+
+.input-price {
+    width: 100%;
+}
+
+/* Badges */
+.badge-type {
+    font-size: 0.75rem;
+    padding: 0.3rem 0.6rem;
+    border-radius: 4px;
+    text-transform: uppercase;
+    font-weight: bold;
+    letter-spacing: 0.5px;
+}
+.badge-type.bundle { background-color: #e3f2fd; color: #0d47a1; border: 1px solid #bbdefb; }
+.badge-type.product { background-color: #e8f5e9; color: #1b5e20; border: 1px solid #c8e6c9; }
+
+/* Switch */
+.switch {
+    position: relative;
+    display: inline-block;
+    width: 46px;
+    height: 24px;
+    margin: 0;
+}
+.switch input { opacity: 0; width: 0; height: 0; }
+.slider {
+    position: absolute;
+    cursor: pointer;
+    top: 0; left: 0; right: 0; bottom: 0;
+    background-color: #ccc;
+    transition: .4s;
+}
+.slider:before {
+    position: absolute;
+    content: "";
+    height: 18px; width: 18px;
+    left: 3px; bottom: 3px;
+    background-color: white;
+    transition: .4s;
+}
+input:checked + .slider { background-color: var(--primary-color); }
+input:checked + .slider:before { transform: translateX(22px); }
+.slider.round { border-radius: 34px; }
+.slider.round:before { border-radius: 50%; }
+
+/* Pack Container */
+.pack-container {
+    border: 1px solid #dee2e6;
+    border-radius: 8px;
+    margin-bottom: 2rem;
+    overflow: hidden;
+}
+.pack-title {
+    background-color: #f8f9fa;
+    padding: 1rem;
+    font-weight: 600;
+    border-bottom: 1px solid #dee2e6;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+/* Groupe de boutons d'action dans la liste */
+.school-actions {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+/* Boutons petits */
+.btn-small {
+    padding: 0.3rem 0.6rem;
+    font-size: 0.8rem;
+}
+/* Ton style personnalisé pour le bouton danger */
+.btn-danger {
+    border-radius: 5px;
+    width: 35px;
+    height: 35px;
+    background-color: #fff;
+    color: #dc3545;
+    border: 1px solid #dc3545;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 0;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.btn-danger svg {
+    width: 18px;
+    height: 18px;
+    display: block;
+    stroke: #dc3545; /* Couleur par défaut */
+    transition: stroke 0.2s;
+    pointer-events: none; 
+}
+
+.btn-danger:hover { 
+    background-color: #dc3545; 
+    color: white; 
+}
+
+.btn-danger:hover svg { 
+    stroke: white; 
+}
+
+
+
+#school-config-form .final-actions .footer-buttons {
+    margin-left: auto;
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+}
+
+
+/* --- Recherche Élève --- */
+.search-container {
+    flex-grow: 1;
+    max-width: 400px;
+    margin: 0 2rem;
+    position: relative; /* Pour le positionnement */
+}
+
+.search-container input {
+    width: 100%;
+    padding: 0.6rem 1rem 0.6rem 2.5rem; /* Padding gauche augmenté pour laisser place à la loupe */
+    border-radius: 20px;
+    border: 1px solid #ced4da;
+    font-size: 0.95rem;
+    background-color: #f8f9fa;
+    transition: all 0.2s;
+    
+    /* La loupe est ajoutée en background */
+    background-image: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="%236c757d" viewBox="0 0 16 16"><path d="M11.742 10.344a6.5 6.5 0 1 0-1.397 1.398h-.001c.03.04.062.078.098.115l3.85 3.85a1 1 0 0 0 1.415-1.414l-3.85-3.85a1.007 1.007 0 0 0-.115-.1zM12 6.5a5.5 5.5 0 1 1-11 0 5.5 5.5 0 0 1 11 0z"/></svg>');
+    background-repeat: no-repeat;
+    background-position: 12px center; /* Positionnée à gauche */
+}
+
+.search-container input:focus {
+    background-color: #fff;
+    border-color: var(--primary-color);
+    box-shadow: 0 0 0 3px rgba(50, 100, 254, 0.15);
+    outline: none;
+}
+
+/* Astuce pour masquer le placeholder au focus */
+.search-container input:focus::placeholder {
+    color: transparent;
+}
+
+
+/* Bouton rond avec icône seule (Retour, etc.) */
+.btn-icon-only {
+    padding: 0;
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border: 1px solid var(--border-color);
+    background-color: #fff;
+    color: var(--text-muted-color);
+    transition: all 0.2s;
+    cursor: pointer;
+}
+
+.btn-icon-only svg {
+    width: 24px;
+    height: 24px;
+    display: block;
+}
+
+.btn-icon-only:hover {
+    background-color: #f0f2f5;
+    color: var(--primary-color);
+    border-color: var(--primary-color);
+}
+
+
+/* --- MODALE DE TRAITEMENT --- */
+.modal-overlay {
+    position: fixed;
+    top: 0; left: 0; width: 100%; height: 100%;
+    background-color: rgba(0, 0, 0, 0.6); /* Fond sombre transparent */
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    z-index: 1000;
+}
+
+.modal-content {
+    background: white;
+    padding: 2rem;
+    border-radius: 12px;
+    width: 400px;
+    text-align: center;
+    box-shadow: 0 10px 25px rgba(0,0,0,0.2);
+}
+
+.progress-container {
+    margin: 1.5rem 0;
+}
+
+.progress-container progress {
+    width: 100%;
+    height: 20px;
+    border-radius: 10px;
+    /* Utilise les mêmes styles que l'autre barre si tu veux */
+}
+
+.btn-danger-outline {
+    background: transparent;
+    border: 1px solid #dc3545;
+    color: #dc3545;
+    padding: 0.5rem 1rem;
+    border-radius: 6px;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+.btn-danger-outline:hover {
+    background: #dc3545;
+    color: white;
+}
+
+/* --- STYLES BARRE DE PROGRESSION PERSONNALISÉE (A TESTER) --- */
+progress {
+    /* 1. On désactive le look Windows natif (le rectangle vert) */
+    -webkit-appearance: none;
+    appearance: none;
+    border: none;
+    
+    /* 2. Dimensions et Arrondis du conteneur global */
+    height: 16px; /* Hauteur de la barre */
+    border-radius: 10px; /* Bords très arrondis */
+    width: 100%;
+    overflow: hidden; /* Important pour que le remplissage ne dépasse pas */
+}
+
+/* 3. Le fond de la barre (le rail gris) */
+progress::-webkit-progress-bar {
+    background-color: #e9ecef;
+    border-radius: 10px;
+}
+
+/* 4. La partie remplie (l'avancement en BLEU) */
+progress::-webkit-progress-value {
+    /* C'est ici qu'on force le bleu ! */
+    background-color: var(--primary-color); /* ou #3264FE */
+    
+    /* On arrondit aussi l'intérieur pour que ça suive la forme */
+    border-radius: 10px; 
+    
+    /* Petite transition pour que ça avance de manière fluide */
+    transition: width 0.3s ease; 
+}
+
+
+
+/* --- Styles Éditeur de Modèles --- */
+
+/* Layout général */
+.template-editor-layout {
+    display: flex;
+    gap: 2rem;
+    height: 75vh; /* Hauteur fixe pour le scroll */
+}
+
+/* Sidebar de gauche (Liste) */
+.template-list-panel {
+    width: 280px;
+    border-right: 1px solid var(--border-color);
+    padding-right: 1.5rem;
+    display: flex;
+    flex-direction: column;
+}
+
+#template-list {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+    overflow-y: auto;
+    flex-grow: 1;
+}
+
+#template-list li {
+    padding: 0.75rem 1rem;
+    margin-bottom: 0.5rem;
+    cursor: pointer;
+    border-radius: 8px;
+    transition: all 0.2s;
+    font-weight: 500;
+}
+
+#template-list li:hover {
+    background-color: #f8f9fa;
+}
+
+#template-list li.active {
+    background-color: #e7f3ff;
+    color: var(--primary-color);
+    border-left: 4px solid var(--primary-color);
+}
+
+/* Panneau de droite (Formulaire) */
+.template-form-panel {
+    flex-grow: 1;
+    overflow-y: auto;
+    padding-right: 1rem; /* Pour la scrollbar */
+}
+
+/* Zone de coordonnées */
+.coords-group {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 1rem;
+    margin-bottom: 1.5rem;
+}
+
+/* Actions du formulaire */
+.form-actions-spaced {
+    display: flex;
+    justify-content: space-between; /* Supprimer à gauche, Sauver à droite */
+    align-items: center;
+    margin-top: 2rem;
+    padding-top: 1rem;
+    border-top: 1px solid var(--border-color);
+}
+
+/* Correction du bouton Supprimer */
+.btn-danger-text {
+    background-color: white;
+    color: #dc3545;
+    border: 1px solid #dc3545;
+    padding: 0.6rem 1.2rem;
+    border-radius: 6px;
+    cursor: pointer;
+    font-weight: 500;
+    transition: all 0.2s;
+}
+
+.btn-danger-text:hover {
+    background-color: #dc3545;
+    color: white;
+}

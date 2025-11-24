@@ -1,0 +1,47 @@
+{
+  "name": "scolarsuite",
+  "version": "1.0.0",
+  "description": "Suite de gestion pour photographes scolaires",
+  "main": "src/main.js",
+  "author": "Ton Nom ou Ta Société",
+  "scripts": {
+    "start": "electron .",
+    "dist": "electron-builder",
+    "postinstall": "electron-rebuild -f -w sqlite3"
+  },
+  "build": {
+    "npmRebuild": false,
+    "appId": "com.scolarsuite.app",
+    "productName": "ScolarSuite",
+    "directories": {
+      "output": "dist"
+    },
+    "files": [
+      "src/**/*",
+      "package.json"
+    ],
+    "win": {
+      "target": "nsis",
+      "icon": "src/assets/images/photo_tri_icon.png"
+    },
+    "nsis": {
+      "oneClick": false,
+      "allowToChangeInstallationDirectory": true,
+      "createDesktopShortcut": true
+    }
+  },
+  "dependencies": {
+    "electron-context-menu": "^4.0.0",
+    "electron-log": "^5.4.3",
+    "electron-updater": "^6.6.2",
+    "exceljs": "^4.4.0",
+    "sharp": "^0.33.2",
+    "sqlite": "^5.1.1",
+    "sqlite3": "^5.1.7"
+  },
+  "devDependencies": {
+    "@electron/rebuild": "^4.0.1",
+    "electron": "^28.1.0",
+    "electron-builder": "^24.9.1"
+  }
+}

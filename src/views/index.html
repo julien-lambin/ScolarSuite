@@ -1,0 +1,55 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <title>ScolarSuite - Gestion bons de commandes</title>
+    <!-- {{> _head.html }} -->
+</head>
+<body>
+    <div class="app-layout">
+        <nav class="sidebar">
+            <!-- {{> _sidebar.html }} -->
+        </nav>
+
+        <!-- Contenu principal de la page -->
+        <main class="main-content">
+            <header class="main-header">
+                <h1>Gestion des écoles</h1>
+            </header>
+            
+            <div class="content-body">
+                <section class="card">
+                    <h2>Écoles Existantes</h2>
+                    <div class="school-list">
+                        <!-- Les écoles chargées dynamiquement apparaîtront ici -->
+                        <div class="school-item-placeholder">Chargement...</div>
+                    </div>
+                </section>
+    
+                <section class="card">
+                    <h2>Créer une Nouvelle École</h2>
+                    <form id="create-school-form">
+                        <div class="form-group">
+                            <label for="source-folder-display">Dossier source des photos</label>
+                            <div class="input-group">
+                                <input type="text" id="source-folder-display" placeholder="-- Cliquez sur &quot;Parcourir&quot; pour choisir un dossier --" readonly>
+                                <button type="button" id="browse-folder-btn" class="btn-primary">Parcourir</button>
+                            </div>
+                            <!-- On garde un input caché pour stocker le chemin complet -->
+                            <input type="hidden" id="source-folder-path">
+                        </div>
+    
+                        <div class="form-group">
+                            <label for="school-name">Nom de l'école</label>
+                            <input type="text" id="school-name" placeholder="Ex: École Jean Jaurès 2023" required>
+                        </div>
+                        
+                        <button type="submit" class="btn-primary full-width">Créer l'école et la configurer</button>
+                    </form>
+                </section>
+            </div>
+        </main>
+    </div>
+
+    <script src="src/assets/js/renderer.js"></script>
+</body>
+</html>

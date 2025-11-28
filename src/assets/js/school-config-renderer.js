@@ -5,8 +5,15 @@ const configForm = document.getElementById('school-config-form');
 const addProductBtn = document.getElementById('add-product-btn');
 const cancelConfigBtn = document.getElementById('cancel-config-btn');
 
-// Liste de base, enrichie par le scan réel
-let availableFolders = ['18x24', 'GRJPEG']; 
+// Éléments Import
+const btnOpenImport = document.getElementById('btn-open-import');
+const importModal = document.getElementById('import-modal');
+const importSelect = document.getElementById('import-school-select');
+const btnCancelImport = document.getElementById('btn-cancel-import');
+const btnConfirmImport = document.getElementById('btn-confirm-import');
+
+// CORRECTION : On initialise vide. On ne force plus 'GRJPEG' ou '18x24'.
+let availableFolders = []; 
 
 let currentSchoolId = null;
 let currentConfig = { catalog: [], packs: {} };
@@ -43,13 +50,12 @@ window.api.onSchoolConfigData(async (schoolId) => {
     const foldersResult = await window.api.getSubfolders(schoolId);
     
     if (foldersResult.success && foldersResult.folders.length > 0) {
-        const realFolders = foldersResult.folders;
-        // Fusion intelligente : on privilégie les dossiers réels, on ajoute les défauts si manquants
-        const allFolders = new Set([...realFolders, ...availableFolders]);
-        availableFolders = Array.from(allFolders).sort();
-        console.log("Dossiers disponibles :", availableFolders);
+        // CORRECTION : On utilise UNIQUEMENT les dossiers trouvés sur le disque.
+        availableFolders = foldersResult.folders.sort();
+        console.log("Dossiers réels disponibles :", availableFolders);
     } else {
         console.warn("Aucun sous-dossier détecté ou erreur scan:", foldersResult.error);
+        availableFolders = []; // Sécurité
     }
 
     // 2. CHARGEMENT DE L'ÉCOLE
@@ -63,7 +69,6 @@ window.api.onSchoolConfigData(async (schoolId) => {
         currentConfig = school.products;
     } else {
         const defaultConfig = await window.api.getDefaultProductCatalog();
-        // Si ancienne structure sans 'packs', on reset ou on adapte
         if (school.products && !school.products.packs) {
              currentConfig = { catalog: school.products, packs: {} };
         } else {
@@ -83,13 +88,31 @@ function renderCatalog() {
         const row = document.createElement('div');
         row.className = 'config-catalog-row row-hover';
         
+        // NOUVEAU : Si désactivé, on grise la ligne
+        if (!product.active) {
+            row.style.opacity = '0.5';
+            row.style.pointerEvents = 'auto'; // On garde les interactions possibles (surtout le switch)
+        }
+        
         const isBundle = product.type === 'bundle';
         const currentSource = product.source_folder || '18x24';
         const currentDest = product.destination_folder || product.name;
         
-        const folderOptions = availableFolders.map(f => 
+        // Validation : Le dossier source existe-t-il ?
+        const sourceExists = availableFolders.includes(currentSource);
+        
+        // Construction des options
+        let folderOptions = availableFolders.map(f => 
             `<option value="${f}" ${currentSource === f ? 'selected' : ''}>${f}</option>`
         ).join('');
+
+        // Ajout visuel si dossier manquant
+        if (!isBundle && !sourceExists) {
+            folderOptions = `<option value="${currentSource}" selected>⚠️ ${currentSource} (Introuvable)</option>` + folderOptions;
+        }
+        
+        // NOUVEAU : Le style rouge ne s'applique QUE si le produit est ACTIF
+        const warningStyle = (!isBundle && !sourceExists && product.active) ? 'border: 2px solid red; color: #d32f2f; background: #ffebee;' : '';
 
         row.innerHTML = `
             <div class="col-name">
@@ -97,7 +120,7 @@ function renderCatalog() {
             </div>
             
             <div class="col-source">
-                ${!isBundle ? `<select class="select-source" data-index="${index}">${folderOptions}</select>` : '<span style="color:#ccc">-</span>'}
+                ${!isBundle ? `<select class="select-source" data-index="${index}" style="${warningStyle}">${folderOptions}</select>` : '<span style="color:#ccc">-</span>'}
             </div>
 
             <div class="col-dest">
@@ -121,6 +144,7 @@ function renderCatalog() {
     });
 }
 
+
 // --- RENDU DES PACKS (TABLEAU 2) ---
 function renderPacks() {
     packsContainer.innerHTML = '';
@@ -139,7 +163,7 @@ function renderPacks() {
         let html = `
             <div class="pack-title">
                 <span>📦 Contenu Technique de la Pochette (Modèle Unique)</span>
-                <button type="button" class="btn-secondary btn-small btn-add-pack-item" data-pack="${packKey}">+ Ajouter un élément</button>
+                <button type="button" class="btn-primary btn-small btn-add-pack-item" data-pack="${packKey}">+ Ajouter un élément</button>
             </div>
             <div class="config-pack-header">
                 <span>Nom Élément (Technique)</span>
@@ -154,9 +178,19 @@ function renderPacks() {
             const currentSource = item.source || '18x24';
             const currentQty = item.qty || 1;
             
-            const folderOptions = availableFolders.map(f => 
+            // Validation
+            const sourceExists = availableFolders.includes(currentSource);
+            const warningStyle = !sourceExists ? 'border: 2px solid red; color: #d32f2f; background: #ffebee;' : '';
+
+            // Construction Options
+            let folderOptions = availableFolders.map(f => 
                 `<option value="${f}" ${currentSource === f ? 'selected' : ''}>${f}</option>`
             ).join('');
+            
+            // Ajout visuel si dossier manquant
+            if (!sourceExists) {
+                folderOptions = `<option value="${currentSource}" selected>⚠️ ${currentSource} (Introuvable)</option>` + folderOptions;
+            }
             
             html += `
                 <div class="config-pack-row row-hover">
@@ -167,7 +201,7 @@ function renderPacks() {
                         <input type="number" class="pack-input-qty" value="${currentQty}" min="1" data-pack="${packKey}" data-index="${itemIndex}">
                     </div>
                     <div class="col-source">
-                        <select class="pack-select-source" data-pack="${packKey}" data-index="${itemIndex}">
+                        <select class="pack-select-source" data-pack="${packKey}" data-index="${itemIndex}" style="${warningStyle}">
                             ${folderOptions}
                         </select>
                     </div>
@@ -201,13 +235,21 @@ productListContainer.addEventListener('change', (e) => {
         renderPacks(); 
     } else if (target.classList.contains('select-source')) {
         product.source_folder = target.value;
+        // Reset style
+        target.style.border = '';
+        target.style.color = '';
+        target.style.background = '';
     } else if (target.classList.contains('input-dest')) {
         product.destination_folder = target.value;
     } else if (target.classList.contains('input-price')) {
         product.price = parseFloat(target.value);
     } else if (target.classList.contains('check-active')) {
         product.active = target.checked;
-        renderPacks(); 
+        // NOUVEAU : On re-rend tout le catalogue pour mettre à jour :
+        // 1. L'opacité de la ligne
+        // 2. La bordure rouge (qui doit disparaître si désactivé)
+        renderCatalog();
+        renderPacks(); // Pour mettre à jour les dépendances éventuelles
     }
 });
 
@@ -215,15 +257,14 @@ productListContainer.addEventListener('change', (e) => {
 if (addProductBtn) {
     addProductBtn.addEventListener('click', () => {
         const newKey = `custom_${Date.now()}`;
-        // On prend le premier dossier dispo
-        const defaultSource = availableFolders[0] || '18x24';
+        // On prend le premier dossier dispo ou un placeholder
+        const defaultSource = availableFolders.length > 0 ? availableFolders[0] : '';
         
         currentConfig.catalog.push({
             key: newKey, name: 'Nouveau Produit', price: 10.00, type: 'product',
             active: true, source_folder: defaultSource, destination_folder: 'Nouveau Dossier'
         });
         renderCatalog();
-        // Scroll en bas
         setTimeout(() => {
             if(productListContainer.lastElementChild) {
                 productListContainer.lastElementChild.scrollIntoView({ behavior: 'smooth' });
@@ -243,7 +284,7 @@ packsContainer.addEventListener('click', (e) => {
         const packKey = target.dataset.pack;
         if (!currentConfig.packs[packKey]) currentConfig.packs[packKey] = [];
         
-        const defaultSource = availableFolders[0] || '18x24';
+        const defaultSource = availableFolders.length > 0 ? availableFolders[0] : '';
         currentConfig.packs[packKey].push({
             name: 'Nouvel Élément', qty: 1, source: defaultSource, dest: 'Dossier Pack'
         });
@@ -272,12 +313,111 @@ packsContainer.addEventListener('change', (e) => {
         item.qty = parseInt(target.value) || 1;
     } else if (target.classList.contains('pack-select-source')) {
         item.source = target.value;
+        // Reset style
+        target.style.border = '';
+        target.style.color = '';
+        target.style.background = '';
     } else if (target.classList.contains('pack-input-dest')) {
         item.dest = target.value;
     }
 });
 
-// --- BOUTONS FOOTER ---
+
+// --- GESTION DE L'IMPORTATION ---
+
+if (btnOpenImport) {
+    btnOpenImport.addEventListener('click', async () => {
+        const result = await window.api.getSchools();
+        if (result.success) {
+            importSelect.innerHTML = '<option value="">-- Choisir une école source --</option>';
+            const otherSchools = result.schools.filter(s => s.id != currentSchoolId);
+            
+            if (otherSchools.length === 0) {
+                alert("Aucune autre école disponible pour l'import.");
+                return;
+            }
+
+            otherSchools.forEach(s => {
+                const opt = document.createElement('option');
+                opt.value = s.id;
+                opt.textContent = s.name;
+                importSelect.appendChild(opt);
+            });
+            
+            importModal.style.display = 'flex';
+        }
+    });
+}
+
+if (btnCancelImport) {
+    btnCancelImport.addEventListener('click', () => {
+        importModal.style.display = 'none';
+    });
+}
+
+if (btnConfirmImport) {
+    btnConfirmImport.addEventListener('click', async () => {
+        const sourceSchoolId = importSelect.value;
+        if (!sourceSchoolId) return;
+
+        const result = await window.api.getSchoolById(sourceSchoolId);
+        if (result.success) {
+            const importedConfig = result.school.products;
+            
+            // --- VALIDATION DES DOSSIERS ---
+            const missingFolders = new Set();
+
+            if (importedConfig.catalog) {
+                importedConfig.catalog.forEach(p => {
+                    // Vérif uniquement si actif
+                    if (p.active && p.type !== 'bundle' && p.source_folder && !availableFolders.includes(p.source_folder)) {
+                        missingFolders.add(p.source_folder);
+                    }
+                });
+            }
+
+            if (importedConfig.packs) {
+                Object.values(importedConfig.packs).forEach(packItems => {
+                    packItems.forEach(item => {
+                        if (item.source && !availableFolders.includes(item.source)) {
+                            missingFolders.add(item.source);
+                        }
+                    });
+                });
+            }
+
+            if (missingFolders.size > 0) {
+                const list = Array.from(missingFolders).join(', ');
+                
+                const confirmImport = confirm(
+                    `ATTENTION : Incohérence de dossiers détectée.\n\n` +
+                    `La configuration importée contient des produits ACTIFS faisant référence à des dossiers inexistants :\n` +
+                    `👉 ${list}\n\n` +
+                    `Voulez-vous importer quand même ?\n`
+                );
+
+                if (!confirmImport) return;
+            }
+
+            // Si tout est OK
+            currentConfig = importedConfig;
+            renderCatalog();
+            renderPacks();
+            importModal.style.display = 'none';
+            
+            if (missingFolders.size > 0) {
+                alert("Configuration importée.\nVeuillez corriger ou désactiver les produits en erreur (marqués en rouge).");
+            } else {
+                alert("Configuration importée avec succès !");
+            }
+
+        } else {
+            alert("Erreur lors de la récupération de l'école source.");
+        }
+    });
+}
+
+// --- BOUTONS FOOTER & SAUVEGARDE BLOQUANTE ---
 
 // Annulation
 if (cancelConfigBtn) {
@@ -290,6 +430,55 @@ if (cancelConfigBtn) {
 if (configForm) {
     configForm.addEventListener('submit', async (e) => {
         e.preventDefault();
+
+        // --- VALIDATION BLOQUANTE AVANT SAUVEGARDE ---
+        const blockingErrors = [];
+
+        // 1. Vérif Catalogue
+        if (currentConfig.catalog) {
+            currentConfig.catalog.forEach(p => {
+                // CORRECTION : On ne valide QUE si le produit est ACTIF (switch on)
+                if (p.active === true) {
+                    // Si ce n'est pas un bundle et que le dossier source n'est pas dans la liste dispo
+                    if (p.type !== 'bundle' && p.source_folder && !availableFolders.includes(p.source_folder)) {
+                        blockingErrors.push(`• Produit "${p.name}" : Dossier "${p.source_folder}" introuvable`);
+                    }
+                }
+            });
+        }
+
+        // 2. Vérif Packs
+        if (currentConfig.packs) {
+            // Pour chaque pack (ex: pochette_complete)
+            for (const [packKey, packItems] of Object.entries(currentConfig.packs)) {
+                
+                // On vérifie si le produit parent (le bundle) est actif dans le catalogue
+                const parentBundle = currentConfig.catalog.find(p => p.key === packKey);
+                // Si le bundle est inactif, pas besoin de valider son contenu technique
+                if (parentBundle && parentBundle.active === false) {
+                    continue; 
+                }
+
+                packItems.forEach(item => {
+                    if (item.source && !availableFolders.includes(item.source)) {
+                        blockingErrors.push(`• Élément de pack "${item.name}" : Dossier "${item.source}" introuvable`);
+                    }
+                });
+            }
+        }
+
+        // SI ERREURS -> ALERTE + STOP
+        if (blockingErrors.length > 0) {
+            alert(
+                "⛔ Impossible d'enregistrer la configuration.\n\n" +
+                "Des produits ACTIFS utilisent des dossiers introuvables :\n\n" +
+                blockingErrors.join('\n') + "\n\n" +
+                "👉 Solution : Corrigez le dossier source ou DÉSACTIVEZ le produit."
+            );
+            return; // ON NE SAUVEGARDE PAS
+        }
+
+        // --- SAUVEGARDE SI TOUT EST OK ---
         const result = await window.api.saveSchoolConfig({
             schoolId: currentSchoolId,
             config: currentConfig,

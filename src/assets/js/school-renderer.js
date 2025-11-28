@@ -8,6 +8,9 @@ const trombinoscopeGrid = document.getElementById('trombinoscope-grid');
 const finalActionsFooter = document.querySelector('.final-actions');
 const editConfigBtn = document.getElementById('edit-config-btn');
 const studentSearchInput = document.getElementById('student-search-input'); // Barre de recherche
+const showStatsBtn = document.getElementById('show-stats-btn');
+const statsModal = document.getElementById('stats-modal');
+const closeStatsBtn = document.getElementById('close-stats-btn');
 
 // --- VARIABLES GLOBALES ---
 let currentSchool = null;
@@ -40,46 +43,90 @@ function renderFooter(mode) {
     finalActionsFooter.appendChild(backBtn);
 
     if (mode === 'default') {
+        
+        // Conteneur pour grouper les boutons à droite
+        const rightGroup = document.createElement('div');
+        rightGroup.style.display = 'flex';
+        rightGroup.style.gap = '10px';
+        rightGroup.style.marginLeft = 'auto'; // Pousse tout à droite
+
+        // A. Bouton Stats (Icone seule)
+        const statsBtn = document.createElement('button');
+        statsBtn.id = 'show-stats-footer-btn'; // ID unique
+        statsBtn.className = 'btn-secondary'; // Style rond
+        statsBtn.innerHTML = '📊';
+        statsBtn.title = "Statistiques";
+        statsBtn.style.fontSize = "1.2rem";
+        
+        // Logique du clic (identique à avant)
+        statsBtn.addEventListener('click', async () => {
+            if (!currentSchool) return;
+            const result = await window.api.getSchoolStats(currentSchool.id);
+            
+            if (result.success) {
+                const stats = result.stats;
+                document.getElementById('stat-ca').textContent = stats.totalRevenue.toFixed(2) + ' €';
+                document.getElementById('stat-orders').textContent = stats.totalOrders;
+                document.getElementById('stat-basket').textContent = stats.averageBasket.toFixed(2) + ' €';
+
+                const tbody = document.getElementById('stats-table-body');
+                tbody.innerHTML = '';
+                for (const [name, data] of Object.entries(stats.products)) {
+                    const tr = document.createElement('tr');
+                    tr.innerHTML = `
+                        <td style="padding: 0.6rem; border-bottom: 1px solid #eee;">${name}</td>
+                        <td style="padding: 0.6rem; border-bottom: 1px solid #eee; text-align: center;">${data.qty}</td>
+                        <td style="padding: 0.6rem; border-bottom: 1px solid #eee; text-align: right; font-weight: 500;">${data.revenue.toFixed(2)} €</td>
+                    `;
+                    tbody.appendChild(tr);
+                }
+                document.getElementById('stats-modal').style.display = 'flex';
+            } else {
+                alert("Erreur stats : " + result.error);
+            }
+        });
+        
+        // B. Bouton Traitement
         const processBtn = document.createElement('button');
         processBtn.id = 'process-orders-btn';
         processBtn.className = 'btn-primary-green';
         processBtn.textContent = '🚀 Lancer le Traitement Final';
         
         processBtn.addEventListener('click', async () => {
-            if (!currentSchool) return;
-            
-            // Afficher la modale
-            const modal = document.getElementById('processing-modal');
-            const progressBar = document.getElementById('process-progress-bar');
-            const statusText = document.getElementById('process-status-text');
-            const cancelBtn = document.getElementById('cancel-process-btn');
-            
-            modal.style.display = 'flex';
-            progressBar.value = 0;
-            statusText.textContent = "Démarrage...";
-            processBtn.disabled = true;
+            // ... (logique traitement inchangée) ...
+            if (!currentSchool || !currentSchool.id) return;
+            if (confirm("Lancer le traitement final ?")) {
+                processBtn.disabled = true;
+                processBtn.textContent = 'En cours...';
+                
+                // MODALE PROGRESSION
+                const modal = document.getElementById('processing-modal');
+                const progressBar = document.getElementById('process-progress-bar');
+                const statusText = document.getElementById('process-status-text');
+                const cancelBtn = document.getElementById('cancel-process-btn');
+                
+                modal.style.display = 'flex';
+                progressBar.value = 0;
+                statusText.textContent = "Démarrage...";
+                
+                cancelBtn.onclick = () => { window.api.cancelProcess(); statusText.textContent = "Annulation..."; cancelBtn.disabled = true; };
 
-            // Gestion du clic Annuler
-            cancelBtn.onclick = () => {
-                window.api.cancelProcess();
-                statusText.textContent = "Annulation en cours...";
-                cancelBtn.disabled = true;
-            };
+                const result = await window.api.processOrders({ schoolId: currentSchool.id });
+                
+                modal.style.display = 'none';
+                processBtn.disabled = false;
+                processBtn.textContent = '🚀 Lancer le Traitement Final';
+                cancelBtn.disabled = false;
 
-            const result = await window.api.processOrders({ schoolId: currentSchool.id });
-            
-            // Cacher la modale
-            modal.style.display = 'none';
-            processBtn.disabled = false;
-            cancelBtn.disabled = false;
-
-            if (result.cancelled) {
-                alert("Traitement annulé par l'utilisateur.");
-            } else {
-                alert(result.message);
+                if (result.cancelled) alert("Annulé.");
+                else alert(result.message);
             }
         });
-        finalActionsFooter.appendChild(processBtn);
+
+        // Ajout au groupe puis au footer
+        rightGroup.appendChild(statsBtn);
+        rightGroup.appendChild(processBtn);
+        finalActionsFooter.appendChild(rightGroup);
 
     } else if (mode === 'group_edit') {
         finalActionsFooter.classList.add('no-border'); 
@@ -244,6 +291,7 @@ function initializePageWithData(data) {
     currentSchool = data.school;
     schoolOrders = data.orders;
     schoolClasses = data.classes;
+    hasExplicitFratrie = data.hasExplicitFratrie; // MISE À JOUR
 
     renderFooter('default');
 
@@ -255,7 +303,7 @@ function initializePageWithData(data) {
         displayCategoryButtons(schoolClasses);
 
         let buttonToClick;
-        if (data.activeClass) {
+        if (data.activeClass && data.activeClass !== 'SEARCH') { // Évite de re-cliquer après une recherche
             buttonToClick = categoryButtonsDiv.querySelector(`.category-btn[data-class-name="${data.activeClass}"]`);
         }
         if (!buttonToClick) {
@@ -375,32 +423,32 @@ categoryButtonsDiv.addEventListener('click', async (event) => {
 // 4. CLICS TROMBINOSCOPE
 trombinoscopeGrid.addEventListener('click', async (event) => {
     const target = event.target;
-
-    // --- CAS 1 : Clic sur une carte élève (Navigation vers commande) ---
     const card = target.closest('.student-card');
     if (card) {
         const photoFileName = card.dataset.fileName;
         
         if (photoFileName && currentSchool) {
-            // LOGIQUE DE DÉTECTION DE LA CLASSE
             let determinedClass = null;
             let determinedCategoryName = 'Inconnue';
 
-            // 1. On essaie de trouver la classe qui correspond au début du nom de fichier
-            // On trie par longueur décroissante pour éviter qu'une classe "10" soit détectée comme "1"
-            const sortedClasses = [...schoolClasses].sort((a, b) => b.length - a.length);
-            
-            for (const cls of sortedClasses) {
-                // On vérifie si le fichier commence par "NUMERO " (ex: "1 MAT 1...")
-                // ou si c'est une fratrie "99 F..."
-                if (photoFileName.startsWith(cls + ' ')) {
-                    determinedClass = cls;
-                    determinedCategoryName = (cls === '99 F') ? 'Fratries' : `Classe ${cls}`;
-                    break;
-                }
+            const getClassFromFilename = (fname) => {
+                 const matchStd = fname.match(/^(\d+)/);
+                 if (matchStd) return parseInt(matchStd[1], 10).toString();
+                 const matchCode = fname.match(/[_-](\d{2})(\d{2})\./);
+                 if (matchCode) return parseInt(matchCode[1], 10).toString();
+                 return null;
+            };
+
+            const fileClass = getClassFromFilename(photoFileName);
+
+            if (fileClass && schoolClasses.includes(fileClass)) {
+                determinedClass = fileClass;
+                determinedCategoryName = `Classe ${fileClass}`;
+            } else if (photoFileName.startsWith('99 F')) {
+                determinedClass = '99 F';
+                determinedCategoryName = 'Fratries';
             }
 
-            // 2. Si la détection par nom échoue, on regarde le bouton actif (cas classique hors recherche)
             if (!determinedClass) {
                 const activeCategoryButton = categoryButtonsDiv.querySelector('.category-btn.active');
                 if (activeCategoryButton) {
@@ -409,12 +457,13 @@ trombinoscopeGrid.addEventListener('click', async (event) => {
                 }
             }
 
-            // 3. Navigation avec les bonnes infos
+            // MISE À JOUR : On passe le flag
             window.api.navigateToOrder({
                 schoolId: currentSchool.id,
                 photoFileName: photoFileName,
-                categoryName: determinedCategoryName, // Sera "Classe 1" au lieu de "Recherche"
-                activeClass: determinedClass          // Sera "1"
+                categoryName: determinedCategoryName,
+                activeClass: determinedClass,
+                hasExplicitFratrie: hasExplicitFratrie
             });
         }
         return;
@@ -449,5 +498,56 @@ window.api.onProcessProgress(({ step, percent }) => {
     if (progressBar) {
         progressBar.value = percent;
         statusText.textContent = `${step} (${percent}%)`;
+    }
+});
+
+
+if (showStatsBtn) {
+    showStatsBtn.addEventListener('click', async () => {
+        if (!currentSchool) return;
+
+        // 1. Charger les stats
+        const result = await window.api.getSchoolStats(currentSchool.id);
+        
+        if (result.success) {
+            const stats = result.stats;
+            
+            // 2. Remplir les KPIs
+            document.getElementById('stat-ca').textContent = stats.totalRevenue.toFixed(2) + ' €';
+            document.getElementById('stat-orders').textContent = stats.totalOrders;
+            document.getElementById('stat-basket').textContent = stats.averageBasket.toFixed(2) + ' €';
+
+            // 3. Remplir le tableau
+            const tbody = document.getElementById('stats-table-body');
+            tbody.innerHTML = '';
+            
+            for (const [name, data] of Object.entries(stats.products)) {
+                const tr = document.createElement('tr');
+                tr.innerHTML = `
+                    <td style="padding: 0.6rem; border-bottom: 1px solid #eee;">${name}</td>
+                    <td style="padding: 0.6rem; border-bottom: 1px solid #eee; text-align: center;">${data.qty}</td>
+                    <td style="padding: 0.6rem; border-bottom: 1px solid #eee; text-align: right; font-weight: 500;">${data.revenue.toFixed(2)} €</td>
+                `;
+                tbody.appendChild(tr);
+            }
+
+            // 4. Afficher la modale
+            statsModal.style.display = 'flex';
+        } else {
+            alert("Impossible de charger les statistiques : " + result.error);
+        }
+    });
+}
+
+if (closeStatsBtn) {
+    closeStatsBtn.addEventListener('click', () => {
+        statsModal.style.display = 'none';
+    });
+}
+
+// Fermer si on clique en dehors de la modale
+window.addEventListener('click', (e) => {
+    if (e.target === statsModal) {
+        statsModal.style.display = 'none';
     }
 });

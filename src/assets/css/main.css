@@ -101,32 +101,54 @@ body {
     width: 100%;
 }
 
+/* --- Navigation Sidebar (Mise à jour) --- */
+
 .nav-item a {
     display: flex;
     align-items: center;
     justify-content: center;
     padding: 1rem;
-    color: var(--text-muted-color);
     text-decoration: none;
-    border-radius: 8px;
+    border-radius: 12px;
     margin: 0.5rem 0.5rem;
-    transition: background-color 0.2s, color 0.2s;
+    transition: all 0.2s ease;
+    background-color: transparent;
+    
+    /* COULEUR PAR DÉFAUT (Inactif) */
+    color: var(--text-muted-color); /* Gris */
 }
 
-.nav-item.active a {
-    background-color: var(--primary-color);
-    color: white;
-}
-
-.nav-item:not(.active) a:hover {
-    background-color: var(--background-color);
-}
-
-.nav-icon {
-    font-size: 1.5rem;
+/* Conteneur SVG */
+.nav-icon-svg {
     width: 28px;
+    height: 28px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
 }
 
+/* Style du SVG interne */
+.nav-icon-svg svg {
+    width: 100%;
+    height: 100%;
+    /* fill: currentColor; -> Déjà mis dans le HTML, mais ça marche aussi ici */
+}
+
+
+/* --- ÉTATS --- */
+
+/* Au survol (Inactif) */
+.nav-item:not(.active) a:hover {
+    background-color: #f1f3f5;
+    color: var(--text-color); /* Gris foncé au survol */
+}
+
+/* État ACTIF (Sélectionné) */
+.nav-item.active a {
+    background-color: #e7f3ff; /* Fond Bleu très clair */
+    color: var(--primary-color); /* TOUT DEVIENT BLEU (Texte + SVG grâce à currentColor) */
+    font-weight: 600;
+}
 .nav-text {
     display: none;
 }
@@ -141,6 +163,13 @@ body {
     font-size: 1.75rem;
     margin-bottom: 2rem;
     font-weight: 600; /* Utilisation explicite du SemiBold */
+}
+
+.icon-svg {
+    width: 24px;
+    height: 24px;
+    vertical-align: middle;
+    fill: currentColor; /* Permet au SVG d'hériter de la couleur du texte */
 }
 
 /* --- Composants Communs --- */
@@ -215,6 +244,13 @@ input[readonly] {
 
 .btn-primary:hover {
     background-color: var(--primary-hover-color);
+}
+
+/* État désactivé pour le bouton Lancer */
+.btn-primary:disabled {
+    background-color: #a0a0a0;
+    cursor: not-allowed;
+    opacity: 0.7;
 }
 
 .btn-primary.full-width {
@@ -849,6 +885,10 @@ input[readonly] {
     margin-bottom: 1.5rem;
 }
 
+#btn-open-import {
+    white-space: nowrap; 
+}
+
 /* SECTION 1 : CATALOGUE VENTE (Grille du Haut) */
 /* Nom | Dossier Source | Dossier Export | Type | Prix | Actif */
 .config-catalog-header {
@@ -1290,4 +1330,101 @@ progress::-webkit-progress-value {
 .btn-danger-text:hover {
     background-color: #dc3545;
     color: white;
+}
+
+
+
+
+
+/* --- Styles Suivi Générateur (Version Fusionnée) --- */
+
+/* Ligne d'en-tête du footer */
+.footer-header {
+    display: flex;
+    justify-content: space-between; /* Ecarte Titre et Boutons */
+    align-items: center;            /* Centre verticalement */
+    width: 100%;
+    min-height: 40px;               /* Hauteur minimale pour éviter les sauts */
+}
+
+/* Groupe de boutons à droite */
+.footer-buttons {
+    display: flex;
+    gap: 10px;        /* Espace entre Arrêter et Lancer */
+    margin-left: auto; /* Pousse tout à droite si le titre est absent */
+}
+
+/* Liste des tâches : 60% de largeur */
+#tasks-progress-list {
+    width: 60%;
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+    min-width: 500px;
+}
+
+/* Bouton Arrêter (Rouge) */
+#btn-cancel-generation {
+    background-color: #dc3545;
+    color: white;
+    border: none;
+    padding: 0.6rem 1.2rem;
+    border-radius: 6px;
+    font-weight: 600;
+    font-size: 0.9rem;
+    cursor: pointer;
+}
+#btn-cancel-generation:hover { background-color: #c82333; }
+
+/* Bouton Lancer désactivé */
+.btn-primary:disabled {
+    background-color: #a0a0a0;
+    cursor: not-allowed;
+    opacity: 0.7;
+}
+
+/* Styles des barres de progression (inchangés) */
+.progress-row {
+    background: #fff;
+    border: 1px solid #eee;
+    padding: 0.8rem 1rem;
+    border-radius: 6px;
+    display: grid;
+    grid-template-columns: 2fr 3fr 120px; 
+    gap: 1.5rem;
+    align-items: center;
+}
+.progress-row.pending { opacity: 0.6; }
+.progress-row.running { border-color: var(--primary-color); background-color: #f8f9ff; }
+.progress-row.completed { border-color: var(--green-color); background-color: #f0fff4; }
+.progress-row.error { border-color: #dc3545; background-color: #fff5f5; }
+
+.task-info { display: flex; flex-direction: column; overflow: hidden; text-align: left; }
+.task-title { font-weight: 700; font-size: 0.9rem; }
+.task-detail { font-size: 0.75rem; color: #888; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.mini-progress { width: 100%; height: 10px; }
+.task-status-area { text-align: right; font-weight: 600; font-size: 0.85rem; }
+
+
+#btn-reset-file {
+    display:none; 
+    border: none; 
+    color: #dc3545; 
+    background-color: #dc3545;
+    padding: 0.5rem 1.5rem;
+}
+
+
+#btn-reset-file:hover {
+    color: #dc3545; 
+    background-color: #bb2c3b;
+}
+
+.refresh-icon {
+    margin-bottom: -6px;
+    width: 22px;
+}
+
+#btn-output-folder {
+    white-space: nowrap; 
 }

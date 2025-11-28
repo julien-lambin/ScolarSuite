@@ -12,26 +12,26 @@
 
         <main class="main-content">
             <header class="main-header">
-                <div style="display: flex; align-items: center; gap: 1rem;">
-                    <button id="btn-back" class="btn-secondary btn-icon-only">←</button>
-                    <h1>Configuration des Modèles Excel</h1>
+                <div style="display: flex; align-items: center; gap: 1rem; margin-bottom: 1rem;">
+                    <button id="btn-back" class="btn-secondary btn-icon-only" title="Retour">
+                        <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                            <path d="M16.1795 3.26875C15.7889 2.87823 15.1558 2.87823 14.7652 3.26875L8.12078 9.91322C6.94952 11.0845 6.94916 12.9833 8.11996 14.155L14.6903 20.7304C15.0808 21.121 15.714 21.121 16.1045 20.7304C16.495 20.3399 16.495 19.7067 16.1045 19.3162L9.53246 12.7442C9.14194 12.3536 9.14194 11.7205 9.53246 11.33L16.1795 4.68297C16.57 4.29244 16.57 3.65928 16.1795 3.26875Z" fill="currentColor"></path>
+                        </svg>
+                    </button>
+                    <!-- Ajout de margin: 0 pour un alignement parfait avec le bouton -->
+                    <h1 style="margin: 0;">Configuration des Modèles Excel</h1>
                 </div>
             </header>
             
-<div class="content-body">
+            <div class="content-body">
                 <div class="card">
-                    <!-- NOUVELLE STRUCTURE AVEC CLASSES -->
                     <div class="template-editor-layout">
                         
-                        <!-- Liste des modèles -->
                         <div class="template-list-panel">
-                            <ul id="template-list">
-                                <!-- Liste générée -->
-                            </ul>
+                            <ul id="template-list"></ul>
                             <button id="btn-new-template" class="btn-secondary full-width" style="margin-top: 1rem;">+ Nouveau Modèle</button>
                         </div>
 
-                        <!-- Formulaire d'édition -->
                         <div class="template-form-panel">
                             <form id="template-form" style="display: none;">
                                 <div class="form-group">
@@ -43,6 +43,29 @@
                                     <label>Nom affiché dans le menu</label>
                                     <input type="text" id="tpl-label" required>
                                 </div>
+
+                                <!-- ZONE FICHIER MISE À JOUR -->
+                                <div class="form-group">
+                                    <label>Fichier Excel associé</label>
+                                    
+                                    <div style="background: #f8f9fa; padding: 10px; border: 1px solid #dee2e6; border-radius: 6px; margin-bottom: 10px;">
+                                        <div id="file-status-text" style="font-size: 0.85rem; font-weight: bold; margin-bottom: 5px;"></div>
+                                        <div style="font-size: 0.75rem; color: #666; word-break: break-all;" id="file-path-text"></div>
+                                    </div>
+
+                                    <div class="input-group">
+                                        <!-- 1. Modifier (Gros bouton bleu) -->
+                                        <button type="button" id="btn-edit-excel" class="btn-primary" style="flex-grow: 1;">🖊️ Modifier</button>
+                                        
+                                        <!-- 2. Changer (Bouton gris) -->
+                                        <button type="button" id="btn-change-file" class="btn-secondary" title="Choisir un autre fichier...">📂</button>
+                                        
+                                        <!-- 3. Reset (Bouton avec bordure rouge, intégré à la ligne) -->
+                                        <button type="button" id="btn-reset-file" class="btn-secondary" title="Rétablir le fichier système d'origine"><svg class="refresh-icon" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><g id="SVGRepo_bgCarrier" stroke-width="0"></g><g id="SVGRepo_tracerCarrier" stroke-linecap="round" stroke-linejoin="round"></g><g id="SVGRepo_iconCarrier"> <path d="M4.06189 13C4.02104 12.6724 4 12.3387 4 12C4 7.58172 7.58172 4 12 4C14.5006 4 16.7332 5.14727 18.2002 6.94416M19.9381 11C19.979 11.3276 20 11.6613 20 12C20 16.4183 16.4183 20 12 20C9.61061 20 7.46589 18.9525 6 17.2916M9 17H6V17.2916M18.2002 4V6.94416M18.2002 6.94416V6.99993L15.2002 7M6 20V17.2916" stroke="#ffffff" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"></path> </g></svg></button>
+                                    </div>
+                                    <small style="color: #888;">Le fichier s'ouvrira directement dans Excel.</small>
+                                </div>
+                                <!-- FIN ZONE FICHIER -->
 
                                 <div class="form-group">
                                     <label>Mode de séparation des pages</label>
@@ -90,14 +113,12 @@
                                     <textarea id="tpl-placeholders" rows="6" style="width: 100%; font-family: monospace; border: 1px solid #ced4da; border-radius: 6px; padding: 0.5rem;"></textarea>
                                 </div>
 
-                                <!-- ACTIONS -->
                                 <div class="form-actions-spaced">
                                     <button type="button" id="btn-delete-template" class="btn-danger-text">Supprimer ce modèle</button>
                                     <button type="submit" class="btn-primary">Enregistrer les modifications</button>
                                 </div>
                             </form>
                             
-                            <!-- Message vide -->
                             <div id="empty-state" style="text-align: center; color: #888; margin-top: 3rem;">
                                 <p>Sélectionnez un modèle à gauche pour l'éditer.</p>
                             </div>

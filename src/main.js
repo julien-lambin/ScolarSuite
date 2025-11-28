@@ -7,6 +7,7 @@ const dbPromise = require('./database.js');
 const sharp = require('sharp');
 const excelGenerator = require('./services/excelGenerator-bdc');
 const templateManager = require('./services/templateManager-bdc');
+const { shell } = require('electron');
 
 // Import du service métier
 const orderProcessor = require('./services/orderProcessor');
@@ -238,18 +239,52 @@ async function handleGetSchoolById(event, schoolId) {
     }
 }
 
-async function handleGetClasses(event, sourceFolderPath) {
+// Nouvelle fonction utilitaire pour extraire le numéro de classe
+function extractClassNumber(filename) {
+    // Cas 1 : Standard (Commence par un chiffre) -> "1 MAT 1..."
+    const matchStandard = filename.match(/^(\d+)/);
+    if (matchStandard) return parseInt(matchStandard[1], 10).toString(); // "01" -> "1"
+
+    // Cas 2 : Code (Lettres + Tiret + 4 chiffres) -> "BRL_0205" ou "JC-1121"
+    // On cherche le motif : délimiteur (_ ou -) suivi de 4 chiffres
+    const matchCode = filename.match(/[_-](\d{2})(\d{2})\./);
+    if (matchCode) {
+        // matchCode[1] = les 2 premiers chiffres (la classe)
+        // matchCode[2] = les 2 derniers chiffres (l'élève)
+        return parseInt(matchCode[1], 10).toString(); // "02" -> "2"
+    }
+    
+    return null;
+}
+
+async function handleGetClasses(event, sourceFolderPath, subFolder = '18x24') {
     try {
-        const targetPath = path.join(sourceFolderPath, '18x24');
-        const files = await fs.readdir(targetPath);
+        const targetPath = path.join(sourceFolderPath, subFolder);
+        
+        // Si le dossier n'existe pas, on essaie de le trouver intelligemment
+        let finalPath = targetPath;
+        try {
+            await fs.access(finalPath);
+        } catch {
+            const dirs = await fs.readdir(sourceFolderPath, { withFileTypes: true });
+            const candidate = dirs.find(d => d.isDirectory() && (d.name === '18x24' || d.name.includes('18x24')));
+            if (candidate) finalPath = path.join(sourceFolderPath, candidate.name);
+            else return { success: true, classes: [] };
+        }
+
+        const files = await fs.readdir(finalPath);
         const classNames = new Set();
+
         for (const file of files) {
             if (!/\.(jpg|jpeg)$/i.test(file)) continue;
-            const fileNameWithoutExt = path.parse(file).name;
-            if (fileNameWithoutExt.toUpperCase().startsWith('99 F')) continue;
-            const match = fileNameWithoutExt.match(/^(\d+)/);
-            if (match && match[1]) classNames.add(match[1]);
+            if (file.toUpperCase().startsWith('99 F')) continue; // On ignore les fratries ici
+            
+            const classNum = extractClassNumber(file);
+            if (classNum) {
+                classNames.add(classNum);
+            }
         }
+        
         const sortedClasses = Array.from(classNames).sort((a, b) => Number(a) - Number(b));
         return { success: true, classes: sortedClasses };
     } catch (error) {
@@ -260,12 +295,31 @@ async function handleGetClasses(event, sourceFolderPath) {
 
 async function handleGetPhotosByClass(event, { sourceFolderPath, className }) {
     try {
-        const targetPath = path.join(sourceFolderPath, '18x24');
+        // Même logique de recherche de dossier
+        let targetPath = path.join(sourceFolderPath, '18x24');
+        try { await fs.access(targetPath); } catch {
+            const dirs = await fs.readdir(sourceFolderPath, { withFileTypes: true });
+            const candidate = dirs.find(d => d.isDirectory() && (d.name === '18x24' || d.name.includes('18x24')));
+            if (candidate) targetPath = path.join(sourceFolderPath, candidate.name);
+        }
+
         const files = await fs.readdir(targetPath);
         const photos = [];
+        
         for (const file of files) {
             if (!/\.(jpg|jpeg)$/i.test(file)) continue;
-            if (file.startsWith(className + ' ')) {
+            
+            // Si c'est une fratrie demandée
+            if (className === '99 F' && file.startsWith('99 F')) {
+                 photos.push({ fileName: file, displayName: path.parse(file).name, filePath: path.join(targetPath, file) });
+                 continue;
+            }
+
+            // Si c'est une classe normale
+            const fileClass = extractClassNumber(file);
+            
+            // On compare le numéro extrait (ex: "2") avec la classe demandée ("2")
+            if (fileClass === className) {
                 photos.push({
                     fileName: file,
                     displayName: path.parse(file).name,
@@ -370,23 +424,50 @@ async function handleGetInitialSchoolData(event, schoolId) {
         const school = await db.get('SELECT * FROM schools WHERE id = ?', schoolId);
         if (!school) throw new Error('École non trouvée');
         
-        // Parse sécurisé
+        // Parse sécurisé de la config
         try {
             let config = JSON.parse(school.products);
             if (Array.isArray(config) || !config.catalog) config = DEFAULT_CONFIG;
             school.products = config;
         } catch (e) { school.products = DEFAULT_CONFIG; }
 
-        const classesResult = await handleGetClasses(event, school.sourceFolderPath);
+        // --- DÉTECTION LOGIQUE ---
+        // 1. Quel est le dossier photo principal ?
+        let mainPhotoFolder = '18x24';
+        const refProduct = school.products.catalog.find(p => p.key === 'tirage_18x24' || p.key.includes('indiv'));
+        if (refProduct && refProduct.source_folder) {
+            mainPhotoFolder = refProduct.source_folder;
+        }
+
+        // 2. Y a-t-il des fichiers "99 F" explicites ?
+        let hasExplicitFratrie = false;
+        try {
+            const files = await fs.readdir(path.join(school.sourceFolderPath, mainPhotoFolder));
+            hasExplicitFratrie = files.some(f => f.toUpperCase().startsWith('99 F'));
+        } catch (e) {
+            console.warn(`Impossible de scanner le dossier photos pour détecter les fratries : ${e.message}`);
+        }
+
+        // 3. Récupération des noms de classes
+        const classesResult = await handleGetClasses(event, school.sourceFolderPath, mainPhotoFolder);
+        
+        // 4. Récupération des commandes
         const orders = await db.all('SELECT * FROM orders WHERE schoolId = ?', schoolId);
-        return { school, orders: orders, classes: classesResult.classes };
+
+        // 5. Envoi des données enrichies au frontend
+        return { 
+            school, 
+            orders, 
+            classes: classesResult.classes,
+            hasExplicitFratrie // Le flag crucial
+        };
     } catch (e) {
         console.error("Erreur dans handleGetInitialSchoolData:", e);
         return null;
     }
 }
 
-function handleNavigateToOrder(event, { schoolId, photoFileName, categoryName, activeClass }) {
+function handleNavigateToOrder(event, { schoolId, photoFileName, categoryName, activeClass, hasExplicitFratrie }) {
     if (mainWindow) {
         buildPage('order.html').then(pageHtml => {
             const baseUrl = `file://${path.join(__dirname, '../')}`;
@@ -394,7 +475,14 @@ function handleNavigateToOrder(event, { schoolId, photoFileName, categoryName, a
                 baseURLForDataURL: baseUrl
             });
             mainWindow.webContents.once('did-finish-load', () => {
-                mainWindow.webContents.send('order-data', { schoolId, photoFileName, categoryName, activeClass });
+                // CORRECTION : On transmet bien hasExplicitFratrie au renderer
+                mainWindow.webContents.send('order-data', { 
+                    schoolId, 
+                    photoFileName, 
+                    categoryName, 
+                    activeClass, 
+                    hasExplicitFratrie 
+                });
             });
         });
     }
@@ -558,6 +646,60 @@ async function handleGetThumbnailPath(event, schoolId) {
     return path.join(app.getPath('userData'), 'thumbnails', `school_${schoolId}`);
 }
 
+
+async function handleGetSchoolStats(event, schoolId) {
+    try {
+        const db = await dbPromise;
+        const orders = await db.all('SELECT items, totalAmount FROM orders WHERE schoolId = ?', schoolId);
+        
+        let stats = {
+            totalRevenue: 0,
+            totalOrders: 0,
+            averageBasket: 0,
+            products: {} // { "Tirage 18x24": { qty: 50, revenue: 450 } }
+        };
+
+        for (const order of orders) {
+            // On ignore les commandes spéciales de groupe (profs) pour le CA "Ventes élèves"
+            // (Tu peux décider de les inclure si tu veux)
+            // if (order.studentIdentifier === 'GROUP_PHOTO_ONLY') continue;
+
+            stats.totalOrders++;
+            stats.totalRevenue += order.totalAmount;
+
+            const items = JSON.parse(order.items);
+            for (const item of items) {
+                const productName = item.name;
+                const quantity = item.quantity;
+                const price = item.price * quantity;
+
+                if (!stats.products[productName]) {
+                    stats.products[productName] = { qty: 0, revenue: 0 };
+                }
+                stats.products[productName].qty += quantity;
+                stats.products[productName].revenue += price;
+            }
+        }
+
+        if (stats.totalOrders > 0) {
+            stats.averageBasket = stats.totalRevenue / stats.totalOrders;
+        }
+
+        // Tri des produits par chiffre d'affaires décroissant
+        const sortedProducts = Object.entries(stats.products)
+            .sort(([, a], [, b]) => b.revenue - a.revenue)
+            .reduce((acc, [key, value]) => ({ ...acc, [key]: value }), {});
+        
+        stats.products = sortedProducts;
+
+        return { success: true, stats };
+
+    } catch (error) {
+        console.error('Erreur stats:', error);
+        return { success: false, error: error.message };
+    }
+}
+
 async function handleGetSubfolders(event, schoolId) {
     try {
         const db = await dbPromise;
@@ -625,6 +767,56 @@ async function handleListSubfolders(event, folderPath) {
     }
 }
 
+
+async function handleEditTemplate(event, templateConfig) {
+    try {
+        let filePathToOpen = templateConfig.user_file_path;
+
+        // Cas 1 : C'est un template système qu'on veut éditer (ou ré-éditer une nouvelle copie)
+        // Note : On force la copie si on n'a pas de fichier utilisateur, OU si on demande explicitement l'édition du système
+        if (!filePathToOpen && templateConfig.systemFile) {
+            
+            // 1. On détermine la source interne
+            const isPackaged = app.isPackaged;
+            const resourcesPath = isPackaged ? process.resourcesPath : path.join(__dirname, 'assets');
+            const sourcePath = path.join(resourcesPath, 'templates-bdc', templateConfig.systemFile);
+
+            // 2. On détermine la destination (Documents/ScolarSuite_Templates)
+            const docDir = path.join(app.getPath('documents'), 'ScolarSuite_Templates');
+            await fs.mkdir(docDir, { recursive: true });
+            
+            // CORRECTION EBUSY : On ajoute un timestamp pour rendre le nom unique
+            // Cela évite l'erreur si le fichier précédent est resté ouvert dans Excel
+            const timestamp = Date.now();
+            const destFileName = `copie_${timestamp}_${templateConfig.systemFile}`;
+            const destPath = path.join(docDir, destFileName);
+
+            // 3. On copie le fichier
+            await fs.copyFile(sourcePath, destPath);
+            filePathToOpen = destPath;
+        }
+
+        // Cas 2 : Ouvrir le fichier
+        if (filePathToOpen) {
+            // Vérif finale que le fichier existe (au cas où l'utilisateur l'aurait supprimé manuellement)
+            try {
+                await fs.access(filePathToOpen);
+                await shell.openPath(filePathToOpen);
+                // On renvoie le nouveau chemin au front pour qu'il l'enregistre
+                return { success: true, newPath: filePathToOpen };
+            } catch (e) {
+                return { success: false, error: "Le fichier n'existe plus à l'emplacement prévu." };
+            }
+        } else {
+            return { success: false, error: "Aucun fichier associé à ce modèle." };
+        }
+
+    } catch (error) {
+        console.error("Erreur ouverture template:", error);
+        return { success: false, error: error.message };
+    }
+}
+
 app.whenReady().then(async () => {
     const { default: contextMenu } = await import('electron-context-menu');
     contextMenu({ showInspectElement: true });
@@ -649,6 +841,9 @@ app.whenReady().then(async () => {
     ipcMain.handle('navigate:toSchool', handleNavigateToSchool);
     ipcMain.handle('db:deleteSchool', handleDeleteSchool);
     ipcMain.handle('school:searchAllPhotos', handleSearchAllPhotos);
+    ipcMain.handle('school:getStats', handleGetSchoolStats);
+
+    
     ipcMain.handle('school:getSubfolders', handleGetSubfolders);
     ipcMain.on('navigate:toOrder', handleNavigateToOrder);
 
@@ -656,29 +851,67 @@ app.whenReady().then(async () => {
     //Handle pour le générateur de bons Excel
     ipcMain.handle('dialog:openFile', handleFileOpen);
 
-    // NOUVEAU HANDLER : Génération Excel JS
-    ipcMain.on('generator:start', async (event, tasks) => {
-        try {
-            // 'tasks' est maintenant un tableau d'objets config
-            // On s'assure que c'est un tableau (rétrocompatibilité si besoin)
-            const configs = Array.isArray(tasks) ? tasks : [tasks];
+    let generatorAbortController = null;
 
-            let count = 1;
+    // HANDLER : Lancement Génération
+    ipcMain.on('generator:start', async (event, tasks) => {
+        // 1. Initialisation Annulation
+        generatorAbortController = new AbortController();
+        const signal = generatorAbortController.signal;
+
+        try {
+            const configs = Array.isArray(tasks) ? tasks : [tasks];
+            let count = 0;
+
             for (const config of configs) {
-                event.reply('generator:log', `--- DÉBUT TÂCHE ${count}/${configs.length} [Mode: ${config.mode}] ---`);
+                // Vérification annulation entre chaque tâche
+                if (signal.aborted) break;
+
+                // Signal au front : "Je commence la tâche numéro 'count'"
+                event.reply('generator:task-start', count);
                 
-                // On appelle le générateur pour cette tâche spécifique
-                await excelGenerator.generate(config, event.sender);
-                
-                event.reply('generator:log', `--- FIN TÂCHE ${count} ---`);
+                try {
+                    // Appel bloquant au générateur (avec signal d'arrêt)
+                    await excelGenerator.generate(config, event.sender, signal);
+                    
+                    // Signal au front : "J'ai fini la tâche 'count'"
+                    event.reply('generator:task-complete', { index: count, success: true });
+                } catch (err) {
+                    if (signal.aborted) throw err; // On laisse remonter si annulé
+                    
+                    // Erreur sur une tâche spécifique -> on la marque en erreur mais on continue les autres ?
+                    // Ici, choix de s'arrêter ou continuer. Pour l'instant, on loggue l'erreur.
+                    console.error(`Erreur tâche ${count}:`, err);
+                    event.reply('generator:task-complete', { index: count, success: false, error: err.message });
+                }
+
                 count++;
             }
 
-            event.reply('generator:complete', { success: true });
+            if (signal.aborted) {
+                event.reply('generator:complete', { success: false, cancelled: true });
+            } else {
+                event.reply('generator:complete', { success: true });
+            }
+
         } catch (error) {
-            console.error("Erreur Générateur:", error);
-            event.reply('generator:log', `ERREUR CRITIQUE: ${error.message}`);
-            event.reply('generator:complete', { success: false, error: error.message });
+            // Cas de l'annulation globale levée
+            if (error.message === "Annulé par l'utilisateur" || (generatorAbortController && generatorAbortController.signal.aborted)) {
+                event.reply('generator:complete', { success: false, cancelled: true });
+            } else {
+                console.error("Erreur Générateur:", error);
+                event.reply('generator:complete', { success: false, error: error.message });
+            }
+        } finally {
+            generatorAbortController = null;
+        }
+    });
+
+    // HANDLER : Annulation
+    ipcMain.on('generator:cancel', () => {
+        if (generatorAbortController) {
+            console.log("Demande d'annulation reçue...");
+            generatorAbortController.abort();
         }
     });
 
@@ -694,6 +927,7 @@ app.whenReady().then(async () => {
     });
     
     ipcMain.handle('fs:listSubfolders', handleListSubfolders);
+    ipcMain.handle('templates:open-edit', (event, config) => handleEditTemplate(event, config));
 
 
     ipcMain.on('navigate', handleNavigate);

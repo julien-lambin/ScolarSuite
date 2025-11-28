@@ -56,6 +56,48 @@
             <button id="cancel-process-btn" class="btn-danger-outline">Annuler le traitement</button>
         </div>
     </div>
+
+        <!-- MODALE STATISTIQUES -->
+    <div id="stats-modal" class="modal-overlay" style="display: none;">
+        <div class="modal-content" style="width: 600px; text-align: left;">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem;">
+                <h2 style="margin: 0;">📊 Statistiques de vente</h2>
+                <button id="close-stats-btn" class="btn-icon-only" style="border:none; font-size: 1.5rem;">&times;</button>
+            </div>
+
+            <!-- KPIs (Chiffres clés) -->
+            <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 1rem; margin-bottom: 2rem;">
+                <div class="stat-card" style="background: #e3f2fd; padding: 1rem; border-radius: 8px; text-align: center;">
+                    <div style="font-size: 0.9rem; color: #555;">Chiffre d'Affaires</div>
+                    <div id="stat-ca" style="font-size: 1.5rem; font-weight: bold; color: var(--primary-color);">0 €</div>
+                </div>
+                <div class="stat-card" style="background: #f3e5f5; padding: 1rem; border-radius: 8px; text-align: center;">
+                    <div style="font-size: 0.9rem; color: #555;">Commandes</div>
+                    <div id="stat-orders" style="font-size: 1.5rem; font-weight: bold; color: #9c27b0;">0</div>
+                </div>
+                <div class="stat-card" style="background: #e8f5e9; padding: 1rem; border-radius: 8px; text-align: center;">
+                    <div style="font-size: 0.9rem; color: #555;">Panier Moyen</div>
+                    <div id="stat-basket" style="font-size: 1.5rem; font-weight: bold; color: var(--green-color);">0 €</div>
+                </div>
+            </div>
+
+            <!-- Tableau détail -->
+            <div style="max-height: 300px; overflow-y: auto; border: 1px solid #eee; border-radius: 8px;">
+                <table style="width: 100%; border-collapse: collapse;">
+                    <thead style="background: #f8f9fa; position: sticky; top: 0;">
+                        <tr>
+                            <th style="padding: 0.8rem; text-align: left; border-bottom: 1px solid #ddd;">Produit</th>
+                            <th style="padding: 0.8rem; text-align: center; border-bottom: 1px solid #ddd;">Qté</th>
+                            <th style="padding: 0.8rem; text-align: right; border-bottom: 1px solid #ddd;">Total</th>
+                        </tr>
+                    </thead>
+                    <tbody id="stats-table-body">
+                        <!-- Lignes générées par JS -->
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
     
     <script src="src/assets/js/school-renderer.js"></script>
 </body>

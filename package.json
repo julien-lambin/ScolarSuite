@@ -28,7 +28,14 @@
       "oneClick": false,
       "allowToChangeInstallationDirectory": true,
       "createDesktopShortcut": true
-    }
+    },
+    "extraResources": [
+      {
+        "from": "src/assets/templates-bdc",
+        "to": "templates-bdc",
+        "filter": ["**/*"]
+      }
+    ]
   },
   "dependencies": {
     "electron-context-menu": "^4.0.0",

@@ -25,6 +25,7 @@ contextBridge.exposeInMainWorld('api', {
   onThumbnailComplete: (callback) => ipcRenderer.on('thumbnail-complete', (event, ...args) => callback(...args)),
   onThumbnailError: (callback) => ipcRenderer.on('thumbnail-error', (event, ...args) => callback(...args)),
   getThumbnailPath: (schoolId) => ipcRenderer.invoke('get-thumbnail-path', schoolId),
+  getSchoolStats: (schoolId) => ipcRenderer.invoke('school:getStats', schoolId),
   
 
   // --- NOUVELLES FONCTIONS POUR LA CONFIGURATION ---
@@ -44,12 +45,18 @@ contextBridge.exposeInMainWorld('api', {
 
   // NOUVEAU : Module Générateur Excel
   startExcelGeneration: (config) => ipcRenderer.send('generator:start', config),
+  cancelExcelGeneration: () => ipcRenderer.send('generator:cancel'), 
+  onGenerateProgress: (callback) => ipcRenderer.on('generator:progress', (event, data) => callback(data)),
+  onGenerateTaskStart: (callback) => ipcRenderer.on('generator:task-start', (event, index) => callback(index)),
+  onGenerateTaskComplete: (callback) => ipcRenderer.on('generator:task-complete', (event, data) => callback(data)),
+  onGenerateComplete: (callback) => ipcRenderer.on('generator:complete', (event, res) => callback(res)),
   onGenerateLog: (callback) => ipcRenderer.on('generator:log', (event, msg) => callback(msg)),
   onGenerateComplete: (callback) => ipcRenderer.on('generator:complete', (event, res) => callback(res)),
   // Gestion des Templates
   getTemplates: () => ipcRenderer.invoke('templates:get'),
   saveTemplates: (templates) => ipcRenderer.invoke('templates:save', templates),
   listSubfolders: (path) => ipcRenderer.invoke('fs:listSubfolders', path),
+  openTemplateForEdit: (config) => ipcRenderer.invoke('templates:open-edit', config),
 
 
   navigate: (viewName) => ipcRenderer.send('navigate', viewName),

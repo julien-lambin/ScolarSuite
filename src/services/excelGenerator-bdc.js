@@ -1,65 +1,26 @@
+// src/services/excelGenerator-bdc.js
 const fs = require('fs').promises;
 const path = require('path');
 const ExcelJS = require('exceljs');
 const sharp = require('sharp');
 const templateManager = require('./templateManager-bdc');
+const { app } = require('electron');
 
-// --- CONFIGURATION DES MODÈLES (Équivalent à ton tableau PHP) ---
-const TEMPLATES_CONFIG = {
-    'noel': {
-        id_placeholders: ['{{ID_ELEVE_1}}', '{{ID_ELEVE_2}}'],
-        name_placeholders: ['{{NOM_ELEVE_1}}', '{{NOM_ELEVE_2}}'],
-        order_placeholders: ['{{BON_NUM_1}}', '{{BON_NUM_2}}'],
-        // Coordonnées des cellules où insérer l'image (Top-Left)
-        // Attention : ExcelJS utilise des index 0-based ou des adresses string
-        // F2 -> col: 6, row: 2
-        photo_anchors: [
-            { col: 5, row: 1 }, // F2 (0-based: F=5, 2=1)
-            { col: 15, row: 1 } // P2 (0-based: P=15, 2=1)
-        ],
-        photo_width: 290, // Largeur en pixels
-        split_mode: true  // Mode Gauche/Droite (Page 1..N / N+1..2N)
-    },
-    'indiv': {
-        id_placeholders: ['{{ID_ELEVE_1}}', '{{ID_ELEVE_2}}'],
-        name_placeholders: ['{{NOM_ELEVE_1}}', '{{NOM_ELEVE_2}}'],
-        order_placeholders: ['{{BON_NUM_1}}', '{{BON_NUM_2}}'],
-        photo_anchors: [
-            { col: 1, row: 2 }, // B3
-            { col: 1, row: 22 } // B23
-        ],
-        photo_width: 170,
-        split_mode: false // Mode Séquentiel (1, 2 sur la même page)
-    },
-    'fratrie': {
-        id_placeholders: ['{{ID_ELEVE_1}}', '{{ID_ELEVE_2}}'],
-        name_placeholders: ['{{NOM_ELEVE_1}}', '{{NOM_ELEVE_2}}'],
-        order_placeholders: ['{{BON_NUM_1}}', '{{BON_NUM_2}}'],
-        photo_anchors: [
-            { col: 1, row: 2 }, // B3
-            { col: 1, row: 24 } // B25
-        ],
-        photo_width: 175,
-        split_mode: false
-    }
-};
+// Détection des chemins (Prod vs Dev)
+const isPackaged = app.isPackaged;
+const TEMPLATES_DIR = isPackaged
+    ? path.join(process.resourcesPath, 'templates-bdc')
+    : path.join(__dirname, '../assets/templates-bdc');
 
-// Regex pour extraire l'ID (à adapter si besoin)
 const ID_REGEX = /-(\d{4})\.(?:jpe?g|png)$/i;
 
-/**
- * Fonction utilitaire pour extraire le nom de l'élève
- * (Équivalent à ton extractStudentName PHP)
- */
 function extractStudentName(filename) {
     const nameWithoutExt = path.parse(filename).name;
-    // Logique : Tout après le dernier chiffre
-    // Ex: "1 MAT 1 TOTO Titi" -> "TOTO Titi"
     const match = nameWithoutExt.match(/.*\d\s+(.+)$/);
     if (match && match[1]) {
         return match[1].trim();
     }
-    return nameWithoutExt; // Fallback
+    return nameWithoutExt;
 }
 
 function extractStudentId(filename) {
@@ -68,129 +29,143 @@ function extractStudentId(filename) {
 }
 
 /**
- * Fonction principale de génération
+ * Fonction principale de génération avec support Annulation et Progression
  */
-async function generate(config, eventSender) {
+/**
+ * Fonction principale de génération avec support Annulation et Progression
+ */
+async function generate(config, eventSender, abortSignal) {
     const { mode, photoFolder, templateFile, outputFolder, subfolders } = config;
     
-    // Chargement dynamique du template
+    // 1. Chargement Config
     const allTemplates = await templateManager.getTemplates();
     const templateConfig = allTemplates[mode];
-
     if (!templateConfig) throw new Error(`Mode inconnu : ${mode}`);
 
-    const log = (msg) => {
-        console.log(msg);
-        if (eventSender) eventSender.send('generator:log', msg);
+    // Helper pour envoyer la progression
+    const reportProgress = (percent, status) => {
+        if (eventSender) eventSender.send('generator:progress', { percent, status });
     };
 
-    log(`--- Démarrage Génération (${mode}) ---`);
+    reportProgress(0, "Initialisation...");
 
-    // 1. SCAN DES PHOTOS (MODE AVANCÉ MULTI-DOSSIERS)
-    let photos = [];
+    // 2. Détermination Template Excel (PRIORITÉ UTILISATEUR)
+    let excelPathToLoad = templateFile; // Valeur par défaut (tâche manuelle)
+
+    // A. Si le template a un chemin utilisateur défini (via le bouton "Modifier Excel")
+    if (templateConfig.user_file_path) {
+        excelPathToLoad = templateConfig.user_file_path;
+    } 
+    // B. Sinon, on utilise le fichier système interne
+    else if (templateConfig.systemFile) {
+        excelPathToLoad = path.join(TEMPLATES_DIR, templateConfig.systemFile);
+    }
+
+    // Vérification existence
+    try {
+        // Si aucun chemin n'est défini nulle part
+        if (!excelPathToLoad) throw new Error("Aucun fichier Excel défini pour ce modèle.");
+        
+        await fs.access(excelPathToLoad);
+    } catch (e) {
+        throw new Error(`Fichier Excel introuvable : ${excelPathToLoad}`);
+    }
+
+    if (abortSignal.aborted) throw new Error("Annulé par l'utilisateur");
+
+    // ... (Le reste de la fonction est inchangé, je le remets pour être complet) ...
+    // 3. Scan des Photos
+    let photos = []; 
+    reportProgress(5, "Scan des dossiers...");
 
     if (subfolders && subfolders.length > 0) {
-        log(`Scan de ${subfolders.length} sous-dossiers...`);
-        
+        // --- MODE MULTI-DOSSIERS ---
         for (const sub of subfolders) {
+            if (abortSignal.aborted) throw new Error("Annulé par l'utilisateur");
             const subPath = path.join(photoFolder, sub);
             try {
                 const files = await fs.readdir(subPath);
                 const subPhotos = files
                     .filter(f => /\.(jpg|jpeg|png)$/i.test(f))
-                    .map(f => path.join(sub, f)); // On garde le chemin relatif "SousDossier/Photo.jpg"
+                    .sort(new Intl.Collator(undefined, {numeric: true, sensitivity: 'base'}).compare);
                 
-                photos = photos.concat(subPhotos);
+                const totalInSub = subPhotos.length;
+                const processedSubPhotos = subPhotos.map((f, index) => ({
+                    file: path.join(sub, f),
+                    bonLabel: `${index + 1}/${totalInSub}`
+                }));
+                photos = photos.concat(processedSubPhotos);
             } catch (e) {
-                log(`Erreur lecture sous-dossier ${sub}: ${e.message}`);
+                console.warn(`Erreur lecture sous-dossier ${sub}: ${e.message}`);
             }
         }
-        // Tri global pour respecter l'ordre des classes (3E1 avant 3E2)
-        photos.sort(new Intl.Collator(undefined, {numeric: true, sensitivity: 'base'}).compare);
-
     } else {
-        // Mode classique (dossier racine unique)
+        // --- MODE DOSSIER UNIQUE ---
         const files = await fs.readdir(photoFolder);
-        photos = files
+        const rawPhotos = files
             .filter(f => /\.(jpg|jpeg|png)$/i.test(f))
-            .sort();
+            .sort(new Intl.Collator(undefined, {numeric: true, sensitivity: 'base'}).compare);
+
+        const totalGlobal = rawPhotos.length;
+        photos = rawPhotos.map((f, index) => ({
+            file: f,
+            bonLabel: `${index + 1}/${totalGlobal}`
+        }));
     }
 
-    if (photos.length === 0) {
-        throw new Error("Aucune photo trouvée dans le(s) dossier(s) source(s).");
-    }
-    log(`${photos.length} photos trouvées au total.`);
+    if (photos.length === 0) throw new Error("Aucune photo trouvée.");
+    reportProgress(10, `${photos.length} photos trouvées.`);
 
-// 2. Préparation des lots (Batches)
+    // 4. Préparation des Lots
     let batches = [];
-
     if (templateConfig.split_mode) {
-        // MODE GAUCHE / DROITE (LOGIQUE MASSICOT)
-        // On divise la liste TOTALE en deux.
+        // Mode Massicot
         const total = photos.length;
-        const half = Math.ceil(total / 2); // Point de coupe (ex: 100 -> 50)
-        
-        const leftList = photos.slice(0, half);      // Photos 1 à 50
-        const rightList = photos.slice(half, total); // Photos 51 à 100
+        const half = Math.ceil(total / 2);
+        const leftList = photos.slice(0, half);
+        const rightList = photos.slice(half, total);
 
-        // On crée autant de pages que la longueur de la liste de gauche
         for (let i = 0; i < leftList.length; i++) {
-            // Sur la page i :
-            // - Gauche : élément i de la liste gauche
-            // - Droite : élément i de la liste droite (s'il existe)
-            
-            const leftItem = { file: leftList[i], bonNum: i + 1 };
-            
-            let rightItem = null;
-            if (rightList[i]) {
-                // Le numéro de bon continue après la fin de la liste gauche
-                rightItem = { file: rightList[i], bonNum: half + i + 1 };
-            }
-
             batches.push({
-                items: [ leftItem, rightItem ]
+                items: [ leftList[i], rightList[i] || null ]
             });
         }
-        
-        log(`Mode Massicot activé : ${total} photos divisées en ${half} pages.`);
-        
     } else {
-        // MODE SÉQUENTIEL CLASSIQUE (1 et 2 sur la même page)
-        let counter = 1;
+        // Mode Séquentiel
         for (let i = 0; i < photos.length; i += 2) {
             batches.push({
-                items: [
-                    { file: photos[i], bonNum: counter++ },
-                    photos[i + 1] ? { file: photos[i + 1], bonNum: counter++ } : null
-                ]
+                items: [ photos[i], photos[i + 1] || null ]
             });
         }
     }
 
-    // 3. TRAITEMENT
+    // 5. Génération Excel
     let fileCounter = 1;
     try { await fs.mkdir(outputFolder, { recursive: true }); } catch (e) {}
 
-    for (const batch of batches) {
-        // log(`Génération page ${fileCounter}...`); // Optionnel pour moins de spam
+    const totalBatches = batches.length;
+
+    for (let bIndex = 0; bIndex < totalBatches; bIndex++) {
+        if (abortSignal.aborted) throw new Error("Annulé par l'utilisateur");
+
+        const batch = batches[bIndex];
+        const currentPercent = 10 + Math.round(((bIndex + 1) / totalBatches) * 90);
+        reportProgress(currentPercent, `Génération page ${fileCounter}/${totalBatches}`);
 
         const workbook = new ExcelJS.Workbook();
-        await workbook.xlsx.readFile(templateFile);
+        await workbook.xlsx.readFile(excelPathToLoad);
         const sheet = workbook.worksheets[0];
 
         for (let i = 0; i < 2; i++) {
             const item = batch.items[i];
-            // Note: item.file contient maintenant "SousDossier/Fichier.jpg" ou juste "Fichier.jpg"
-            // extractStudentName gère le basename automatiquement grâce à path.parse()
             
             const studentData = item ? {
                 name: extractStudentName(path.basename(item.file)),
                 id: extractStudentId(path.basename(item.file)) || '',
-                bonNum: item.bonNum,
+                bonNum: item.bonLabel,
                 file: item.file
             } : null;
 
-            // A. Remplacement Textes
             sheet.eachRow((row) => {
                 row.eachCell((cell) => {
                     if (typeof cell.value === 'string') {
@@ -207,13 +182,11 @@ async function generate(config, eventSender) {
                 });
             });
 
-            // B. Insertion Image
             if (studentData) {
                 const sourcePath = path.join(photoFolder, studentData.file);
-                
                 try {
                     const imageBuffer = await sharp(sourcePath)
-                        .resize({ width: 800 }) 
+                        .resize({ width: 800 })
                         .jpeg({ quality: 85 })
                         .toBuffer();
 
@@ -221,28 +194,23 @@ async function generate(config, eventSender) {
                         buffer: imageBuffer,
                         extension: 'jpeg',
                     });
-
                     const anchor = templateConfig.photo_anchors[i];
                     sheet.addImage(imageId, {
                         tl: { col: anchor.col, row: anchor.row },
                         ext: { width: templateConfig.photo_width, height: templateConfig.photo_width * 1.5 }
                     });
                 } catch (imgErr) {
-                    log(`Erreur image ${studentData.file}: ${imgErr.message}`);
+                    console.warn(`Erreur image: ${imgErr.message}`);
                 }
             }
         }
 
-        // Nommage intelligent : si on a scanné des sous-dossiers, on met le nom du premier sous-dossier ou un nom générique
-        // Pour simplifier en mode fusionné :
         const fileName = `bon_${mode}_page_${String(fileCounter).padStart(3, '0')}.xlsx`;
-        const outputPath = path.join(outputFolder, fileName);
-        
-        await workbook.xlsx.writeFile(outputPath);
+        await workbook.xlsx.writeFile(path.join(outputFolder, fileName));
         fileCounter++;
     }
 
-    log("--- Terminé ! ---");
+    reportProgress(100, "Terminé.");
     return { success: true };
 }
 

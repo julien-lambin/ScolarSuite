@@ -15,7 +15,7 @@
                 <h1>Génération des Bons de Commande</h1>
             </header>
             
-<div class="content-body">
+            <div class="content-body">
                 
                 <form id="generator-form">
                     <!-- 1. CONFIGURATION GLOBALE -->
@@ -24,8 +24,8 @@
                         <div class="form-group">
                             <label>Dossier de sortie (Où seront créés les fichiers Excel)</label>
                             <div class="input-group">
-                                <input type="text" id="global-output-folder" placeholder="Sélectionnez le dossier de destination..." readonly required>
-                                <button type="button" class="btn-secondary" id="btn-output-folder">Parcourir</button>
+                                <input type="text" id="global-output-folder" placeholder="Sélectionnez le dossier de destination..." required>
+                                <button type="button" class="btn-secondary" id="btn-output-folder">📂 Parcourir</button>
                             </div>
                         </div>
                     </div>
@@ -36,7 +36,7 @@
                             <h2>2. Liste des tâches à exécuter</h2>
                             <div>
                                 <button type="button" id="btn-edit-templates" class="btn-secondary small" style="margin-right: 10px;">⚙️ Gérer les modèles</button>
-                                <button type="button" id="btn-add-task" class="btn-secondary small">+ Ajouter une tâche</button>
+                                <button type="button" id="btn-add-task" class="btn-primary small">+ Ajouter une tâche</button>
                             </div>
                         </div>
 
@@ -49,61 +49,53 @@
                         </p>
                     </div>
 
-                    <hr style="border: 0; border-top: 1px solid #eee; margin: 2rem 0;">
+                    <!-- ZONE DE PIED DE PAGE (Footer) -->
+                    <!-- Contient le titre, les boutons ET la liste -->
+                    <div id="generation-footer">
+                        
+                        <!-- LIGNE DU HAUT : [Titre (Gauche)] -------- [Boutons (Droite)] -->
+                        <div class="footer-header">
+                            <!-- Le titre est caché par défaut via CSS/JS -->
+                            <h3 id="progress-title" style="margin: 0; display: none;">Progression du traitement</h3>
+                            
+                            <!-- Groupe de boutons à droite -->
+                            <div class="footer-buttons">
+                                <!-- Bouton Arrêter (Caché par défaut) -->
+                                <button type="button" id="btn-cancel-generation" style="display: none;">Arrêter la génération</button>
+                                
+                                <!-- Bouton Lancer (Toujours là) -->
+                                <button type="submit" id="btn-start-generation" class="btn-primary">
+                                    🚀 Lancer la génération par lots
+                                </button>
+                            </div>
+                        </div>
 
-                    <!-- LOGS -->
-                    <div id="generation-logs" style="
-                        background-color: #1e1e1e; 
-                        color: #00ff00; 
-                        font-family: 'Consolas', monospace; 
-                        padding: 1rem; 
-                        border-radius: 8px; 
-                        height: 200px; 
-                        overflow-y: auto; 
-                        margin-bottom: 1.5rem; 
-                        display: none;
-                        font-size: 0.9rem;">
-                    </div>
-
-                    <div class="form-actions" style="display: flex; justify-content: flex-end;">
-                        <button type="submit" id="btn-start-generation" class="btn-primary">
-                            🚀 Lancer la génération par lots
-                        </button>
+                        <!-- LISTE DE PROGRESSION (En dessous, cachée par défaut) -->
+                        <div id="tasks-progress-list" style="margin-top: 1rem; display: none;">
+                            <!-- Injecté par JS -->
+                        </div>
                     </div>
                 </form>
             </div>
 
-            <!-- TEMPLATE CACHÉ POUR UNE LIGNE DE TÂCHE (Utilisé par le JS) -->
+            <!-- TEMPLATE CACHÉ -->
             <template id="task-row-template">
                 <div class="task-row" style="background: #f8f9fa; padding: 1rem; border-radius: 8px; border: 1px solid #dee2e6; margin-bottom: 1rem; position: relative;">
                     <button type="button" class="btn-remove-task" style="position: absolute; top: 10px; right: 10px; background: transparent; border: none; color: #dc3545; font-weight: bold; cursor: pointer; font-size: 1.2rem;">&times;</button>
                     
                     <div style="display: grid; grid-template-columns: 1fr 2fr 2fr; gap: 1rem; align-items: end;">
-                        
-                        <!-- Type -->
                         <div class="form-group" style="margin-bottom: 0;">
                             <label style="font-size: 0.85rem;">Modèle</label>
-                            <select class="task-type-select">
-                                <option value="indiv">Individuel Classique</option>
-                                <option value="fratrie">Fratrie</option>
-                                <option value="noel">Bons de Noël (Gauche/Droite)</option>
-                            </select>
+                            <select class="task-type-select"></select>
                         </div>
-
-                        <!-- Source -->
                         <div class="form-group" style="margin-bottom: 0;">
                             <label style="font-size: 0.85rem;">Dossier Photos</label>
                             <div class="input-group">
                                 <input type="text" class="task-photo-input" placeholder="Source..." readonly required>
                                 <button type="button" class="btn-secondary task-photo-btn" style="padding: 0.4rem 0.8rem;">...</button>
                             </div>
-                            <!-- NOUVEAU : Zone pour les sous-dossiers -->
-                            <div class="subfolders-list" style="margin-top: 0.5rem; max-height: 150px; overflow-y: auto; border: 1px solid #eee; display: none; padding: 0.5rem; background: white;">
-                                <!-- Checkboxes injectées ici -->
-                            </div>
+                            <div class="subfolders-list" style="margin-top: 0.5rem; max-height: 150px; overflow-y: auto; border: 1px solid #eee; display: none; padding: 0.5rem; background: white;"></div>
                         </div>
-
-                        <!-- Template -->
                         <div class="form-group" style="margin-bottom: 0;">
                             <label style="font-size: 0.85rem;">Fichier Excel (.xlsx)</label>
                             <div class="input-group">

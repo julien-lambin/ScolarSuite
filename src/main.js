@@ -1,13 +1,14 @@
 // src/main.js
 
-const { app, BrowserWindow, ipcMain, dialog } = require('electron');
+const { app, BrowserWindow, ipcMain, dialog, shell } = require('electron');
+const { autoUpdater } = require('electron-updater');
 const path = require('path');
 const fs = require('fs').promises;
 const dbPromise = require('./database.js');
 const sharp = require('sharp');
 const excelGenerator = require('./services/excelGenerator-bdc');
 const templateManager = require('./services/templateManager-bdc');
-const { shell } = require('electron');
+
 
 // Import du service métier
 const orderProcessor = require('./services/orderProcessor');
@@ -27,12 +28,9 @@ const DEFAULT_CONFIG = {
         { key: 'pochette_fratrie_avec', name: 'Pochette Fratrie (AVEC groupe)', price: 16.00, type: 'bundle', active: true, source_folder: null, destination_folder: null },
         
         // Les Produits au détail
-        { key: 'photo_classe', name: 'Photo de classe', price: 6.00, type: 'product', active: true, source_folder: 'GRJPEG', destination_folder: 'GRJPEG' },
-        { key: 'tirage_18x24', name: 'Portrait 18x24', price: 9.00, type: 'product', active: true, source_folder: '18x24', destination_folder: '18x24' },
-        { key: 'multiformat_2x', name: 'Multiformat (2x 12x18)', price: 9.00, type: 'product', active: true, source_folder: 'M1824', destination_folder: 'MF VRAC' },
-        { key: 'multiformat_mix', name: 'Multiformat (2x 9x12 + 3x 6x8 + 4x 3,5x4,5)', price: 9.00, type: 'product', active: true, source_folder: 'M1 1824', destination_folder: 'MF VRAC' },
-        { key: 'magnet', name: 'Magnet 9x13', price: 7.00, type: 'product', active: true, source_folder: '18x24', destination_folder: 'Magnet' },
-        { key: 'agrandissement', name: 'Agrandissement 30x40', price: 25.00, type: 'product', active: true, source_folder: '18x24', destination_folder: 'Poster' }
+        { key: 'GR1824_default', name: 'Photo de classe', price: 6.00, type: 'product', active: true, source_folder: 'GRJPEG', destination_folder: 'GRJPEG' },
+        { key: 'P1824_default', name: 'Portrait 18x24', price: 9.00, type: 'product', active: true, source_folder: '18x24', destination_folder: '18x24' },
+
     ],
 
     // 2. La définition technique du contenu des packs (Modèle Unique)
@@ -40,8 +38,6 @@ const DEFAULT_CONFIG = {
         'pochette_complete': [
             { name: 'Portrait 18x24', qty: 1, source: '18x24', dest: '18x24 pochette' },
             { name: 'Photo de classe', qty: 1, source: 'GRJPEG', dest: 'GRJPEG' },
-            { name: 'Multiformat (2x 12x18)', qty: 1, source: 'M1824', dest: '18x24 pochette' },
-            { name: 'Multiformat (2x 9x12 + 3x 6x8 + 4x 3,5x4,5)', qty: 1, source: 'M1 1824', dest: '18x24 pochette' },
             { name: 'Pochette', qty: 1, source: 'pochette', dest: 'pochette' }
         ]
     }
@@ -56,6 +52,40 @@ const createWindow = async () => {
             preload: path.join(__dirname, 'preload.js'),
         }
     });
+
+    // Logique de mise à jour
+    function setupAutoUpdater() {
+        // Vérifier les mises à jour et notifier (pas de téléchargement auto silencieux pour l'instant)
+        autoUpdater.checkForUpdatesAndNotify();
+
+        autoUpdater.on('update-available', () => {
+            // Tu peux envoyer un message au renderer pour afficher une notification "Mise à jour dispo"
+            console.log("Mise à jour disponible...");
+        });
+
+        autoUpdater.on('update-downloaded', () => {
+            // Une fois téléchargé, on demande à l'utilisateur s'il veut redémarrer
+            const dialogOpts = {
+                type: 'info',
+                buttons: ['Redémarrer', 'Plus tard'],
+                title: 'Mise à jour prête',
+                message: "Une nouvelle version a été téléchargée. Redémarrer l'application pour l'appliquer ?"
+            };
+
+            dialog.showMessageBox(dialogOpts).then((returnValue) => {
+                if (returnValue.response === 0) autoUpdater.quitAndInstall();
+            });
+        });
+    }
+
+    // On lance la vérif une fois que l'app est totalement chargée
+    app.on('ready', () => {
+        // On attend un peu (2 secondes) pour ne pas ralentir le démarrage
+        setTimeout(() => {
+            setupAutoUpdater();
+        }, 2000);
+    });
+
     mainWindow.setMenuBarVisibility(false);
 
     const pageHtml = await buildPage('index.html');
@@ -339,7 +369,13 @@ async function handleGetFratriePhotos(event, { sourceFolderPath }) {
     return handleGetPhotosByClass(event, { sourceFolderPath, className: '99 F' });
 }
 
-function handleNavigateToSchoolConfig(event, schoolId) {
+function handleNavigateToSchoolConfig(event, data) {
+    // Si data est un objet (nouveau comportement), on extrait l'ID. Sinon (ancien), c'est l'ID.
+    const schoolId = (typeof data === 'object' && data.schoolId) ? data.schoolId : data;
+    
+    // On prépare le contexte à envoyer à la page (soit l'objet complet, soit un objet par défaut)
+    const contextData = (typeof data === 'object') ? data : { schoolId: data, from: 'index' };
+
     if (mainWindow) {
         buildPage('school-config.html').then(pageHtml => {
             const baseUrl = `file://${path.join(__dirname, '../')}`;
@@ -347,7 +383,8 @@ function handleNavigateToSchoolConfig(event, schoolId) {
                 baseURLForDataURL: baseUrl
             });
             mainWindow.webContents.once('did-finish-load', () => {
-                mainWindow.webContents.send('school-config-data', schoolId);
+                // On envoie TOUT le contexte (ID + info de retour)
+                mainWindow.webContents.send('school-config-data', contextData);
             });
         });
     }

@@ -1,9 +1,13 @@
 {
   "name": "scolarsuite",
-  "version": "1.0.0",
+  "version": "1.0.2",
   "description": "Suite de gestion pour photographes scolaires",
   "main": "src/main.js",
-  "author": "Ton Nom ou Ta Société",
+  "author": "Julien Lambin",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/julien-lambin/ScolarSuite.git"
+  },
   "scripts": {
     "start": "electron .",
     "dist": "electron-builder",
@@ -13,6 +17,13 @@
     "npmRebuild": false,
     "appId": "com.scolarsuite.app",
     "productName": "ScolarSuite",
+    "publish": [
+      {
+        "provider": "github",
+        "owner": "julien-lambin",
+        "repo": "ScolarSuite"
+      }
+    ],
     "directories": {
       "output": "dist"
     },
@@ -33,7 +44,9 @@
       {
         "from": "src/assets/templates-bdc",
         "to": "templates-bdc",
-        "filter": ["**/*"]
+        "filter": [
+          "**/*"
+        ]
       }
     ]
   },

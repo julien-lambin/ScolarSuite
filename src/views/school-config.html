@@ -49,6 +49,7 @@
                             <span>Type</span>
                             <span>Prix (€)</span>
                             <span>Actif</span>
+                            <span></span> <!-- 7ème colonne vide pour l'alignement -->
                         </div>
                         <div id="product-list-container">
                             <!-- Liste générée par JS -->
@@ -104,6 +105,33 @@
             <div style="display: flex; gap: 1rem; justify-content: center; margin-top: 1.5rem;">
                 <button type="button" id="btn-cancel-import" class="btn-secondary">Annuler</button>
                 <button type="button" id="btn-confirm-import" class="btn-primary">Importer et Remplacer</button>
+            </div>
+        </div>
+    </div>
+
+
+    <!-- MODALE SÉLECTION PRODUIT -->
+    <div id="product-picker-modal" class="modal-overlay" style="display: none;">
+        <div class="modal-content" style="width: 750px; max-height: 80vh; display: flex; flex-direction: column;">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem;">
+                <h3 style="margin: 0;">Ajouter un produit</h3>
+                <button type="button" id="btn-close-picker" style="background: none; border: none; font-size: 1.5rem; cursor: pointer;">&times;</button>
+            </div>
+
+            <!-- Barre de recherche -->
+            <div class="form-group">
+                <input type="text" id="product-search-input" placeholder="🔍 Rechercher par nom ou code (ex: P1824, Mug...)" autocomplete="off" style="width: 100%;">
+            </div>
+
+            <!-- Liste des résultats (Scrollable) -->
+            <div id="product-picker-list" style="flex-grow: 1; overflow-y: auto; border: 1px solid #eee; border-radius: 8px; margin-bottom: 1rem; min-height: 200px;">
+                <!-- Les items seront générés ici -->
+            </div>
+
+            <!-- Pied de page : Création manuelle -->
+            <div style="border-top: 1px solid #eee; padding-top: 1rem; text-align: center;">
+                <p style="font-size: 0.9rem; color: #666; margin-bottom: 0.5rem;">Le produit n'existe pas ?</p>
+                <button type="button" id="btn-create-custom-product" class="btn-secondary" style="width: 100%;">+ Créer un produit vierge</button>
             </div>
         </div>
     </div>

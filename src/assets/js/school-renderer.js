@@ -324,7 +324,12 @@ function initializePageWithData(data) {
 if (editConfigBtn) {
     editConfigBtn.addEventListener('click', () => {
         if (currentSchool && currentSchool.id) {
-            window.api.navigateToSchoolConfig(currentSchool.id);
+            // NOUVEAU : On passe un objet avec le contexte de navigation
+            window.api.navigateToSchoolConfig({
+                schoolId: currentSchool.id,
+                from: 'school', // On signale qu'on vient de la vue détail
+                activeClass: lastActiveCategory // On sauvegarde l'onglet actif
+            });
         }
     });
 }

@@ -1,4 +1,4 @@
-// On garde juste une association visuelle pour les icônes, car elles ne sont pas en BDD
+// On garde juste une association visuelle pour les icônes
 const PRODUCT_ICONS = {
     'pochette_complete': '📦',
     'pochette_fratrie_sans': '👨‍👩‍👧',
@@ -9,7 +9,7 @@ const PRODUCT_ICONS = {
     'multiformat_mix': '🖼️',
     'magnet': '✨',
     'agrandissement': '📐',
-    'default': '🔹' // Icône par défaut pour les nouveaux produits créés
+    'default': '🔹'
 };
 
 const photoContainer = document.getElementById('order-photo-container');
@@ -22,6 +22,7 @@ const totalPriceEl = document.getElementById('total-price');
 const cancelBtn = document.getElementById('cancel-btn');
 const saveBtn = document.getElementById('save-btn');
 const headerBackBtn = document.getElementById('header-back-btn');
+const headerSaveBtn = document.getElementById('header-save-btn'); // NOUVEAU
 
 let currentOrderData = {};
 let schoolClasses = [];
@@ -35,10 +36,13 @@ function updateSelectState(row) {
     const input = row.querySelector('.quantity-input');
     const select = row.querySelector('.class-selector');
     if (!select || !input) return;
-    const quantity = parseInt(input.value);
-    select.disabled = quantity <= 0;
-    select.required = quantity > 0;
-    if (quantity <= 0) select.value = "";
+    
+    // Sécurité si l'input est vide
+    const val = input.value === '' ? 0 : parseInt(input.value);
+    
+    select.disabled = val <= 0;
+    select.required = val > 0;
+    if (val <= 0) select.value = "";
 }
 
 function cloneClassPhotoRow(sourceRow) {
@@ -102,14 +106,43 @@ function populateFormWithOrder(items) {
 
 function updateTotal() {
     let total = 0;
+    const recapContainer = document.getElementById('recap-list');
+    let recapHTML = '';
+
     productList.querySelectorAll('.quantity-input').forEach(input => {
-        const quantity = parseInt(input.value);
+        const quantity = input.value === '' ? 0 : parseInt(input.value);
+        
         if (quantity > 0) {
             const product = getProductFromCatalog(input.dataset.key);
-            if (product) total += product.price * quantity;
+            if (product) {
+                const lineTotal = product.price * quantity;
+                total += lineTotal;
+
+                // Construction de la ligne du récap
+                recapHTML += `
+                    <div class="recap-item">
+                        <span class="recap-item-name" title="${product.name}">${quantity}x ${product.name}</span>
+                        <span>${lineTotal.toFixed(2)} €</span>
+                    </div>
+                `;
+            }
         }
     });
-    totalPriceEl.textContent = `${total.toFixed(2)} €`;
+
+    // Mise à jour du Récap
+    if (recapContainer) {
+        if (total === 0) {
+            recapContainer.innerHTML = '<p class="empty-cart-msg">Aucun article sélectionné</p>';
+        } else {
+            recapContainer.innerHTML = recapHTML;
+        }
+    }
+
+    // Mise à jour de TOUS les totaux (Header + Footer + Recap)
+    const formattedTotal = `${total.toFixed(2)} €`;
+    document.querySelectorAll('.total-display').forEach(el => {
+        el.textContent = formattedTotal;
+    });
 }
 
 // --- CHARGEMENT DES DONNÉES ---
@@ -150,7 +183,7 @@ window.api.onOrderData(async ({ schoolId, photoFileName, categoryName, activeCla
     const isFratriePhoto = photoFileName.toUpperCase().startsWith('99 F');
     const hasClassPhotoProduct = schoolCatalog.some(p => p.key === 'photo_classe' && p.active);
 
-    // A. FILTRAGE : Quels produits afficher ?
+    // A. FILTRAGE
     const availableProducts = schoolCatalog.filter(p => {
         if (!p.active) return false;
         const isFratrieProduct = p.key.includes('fratrie');
@@ -158,7 +191,7 @@ window.api.onOrderData(async ({ schoolId, photoFileName, categoryName, activeCla
         if (hasExplicitFratrie) {
             // MODE EXPLICITE
             if (isFratriePhoto) {
-                // Photo Fratrie : Tout SAUF la Pochette Complète (réservée Indiv)
+                // Photo Fratrie : Tout SAUF la Pochette Complète
                 return p.key !== 'pochette_complete';
             } else {
                 // Photo Standard : Tout SAUF les produits Fratrie
@@ -167,7 +200,7 @@ window.api.onOrderData(async ({ schoolId, photoFileName, categoryName, activeCla
         } else {
             // MODE MÉLANGÉ (IMPLICITE)
             if (hasClassPhotoProduct) {
-                // Cas B : Photo de classe dispo -> On affiche TOUT (Indiv + Fratrie)
+                // Cas B : Photo de classe dispo -> On affiche TOUT
                 return true; 
             } else {
                 // Cas A : Pas de photo de classe -> Indiv uniquement
@@ -187,29 +220,26 @@ window.api.onOrderData(async ({ schoolId, photoFileName, categoryName, activeCla
         productDiv.className = 'product-item-row';
         productDiv.dataset.key = productKey;
         
-        // B. SÉLECTEUR : Faut-il demander la classe ?
+        // B. SÉLECTEUR
         let showClassSelector = false;
 
-        // Cas spécifiques pour les pochettes fratrie
         if (productKey === 'pochette_fratrie_sans') {
-            showClassSelector = false; // Jamais de classe pour "Sans groupe"
+            showClassSelector = false; 
         }
         else if (productKey === 'pochette_fratrie_avec') {
-            showClassSelector = true; // Toujours une classe pour "Avec groupe"
+            showClassSelector = true; 
         }
-        // Cas général "photo de classe" (vendue seule ou ajoutée)
         else if (productKey === 'photo_classe') {
             if (hasExplicitFratrie) {
-                 // Explicite : Oui si c'est une photo 99 F, Non si c'est un élève
                  showClassSelector = isFratriePhoto;
             } else {
-                // Mélangé : Oui si le produit est en vente (Cas B), Non sinon
                 showClassSelector = hasClassPhotoProduct;
             }
         }
 
         const isAddableClassPhoto = productKey === 'photo_classe' && showClassSelector;
         
+        // Note: Suppression du "readonly" sur l'input comme demandé
         const topRowHtml = `
             <div class="product-header">
                 <label class="product-name">
@@ -218,7 +248,7 @@ window.api.onOrderData(async ({ schoolId, photoFileName, categoryName, activeCla
                 </label>
                 <div class="quantity-selector">
                     <button class="quantity-btn minus" data-key="${productKey}">-</button>
-                    <input type="number" value="0" min="0" class="quantity-input" data-key="${productKey}" readonly>
+                    <input type="number" value="0" min="0" class="quantity-input" data-key="${productKey}">
                     <button class="quantity-btn plus" data-key="${productKey}">+</button>
                 </div>
             </div>
@@ -246,22 +276,39 @@ window.api.onOrderData(async ({ schoolId, photoFileName, categoryName, activeCla
 });
 
 // --- GESTION DES ÉVÉNEMENTS ---
+
+// 1. Délégation d'événements pour les clics
 productList.addEventListener('click', (event) => {
     const target = event.target;
     const row = target.closest('.product-item-row');
     if (!row) return;
 
+    // Boutons +/-
     if (target.matches('.quantity-btn')) {
         const input = row.querySelector(`.quantity-input[data-key="${target.dataset.key}"]`);
-        let quantity = parseInt(input.value);
+        let quantity = parseInt(input.value) || 0;
         if (target.matches('.plus')) quantity++;
         else if (target.matches('.minus') && quantity > 0) quantity--;
         input.value = quantity;
         updateSelectState(row);
         updateTotal();
     }
+    // Bouton ajouter ligne
     if (target.matches('.add-row-btn')) cloneClassPhotoRow(row);
+    // Bouton supprimer ligne
     if (target.matches('.remove-row-btn')) { row.remove(); updateTotal(); }
+});
+
+// 2. Gestion de la saisie manuelle (NOUVEAU)
+productList.addEventListener('input', (event) => {
+    if (event.target.matches('.quantity-input')) {
+        const row = event.target.closest('.product-item-row');
+        // Empêcher les valeurs négatives
+        if (event.target.value < 0) event.target.value = 0;
+        
+        updateSelectState(row);
+        updateTotal();
+    }
 });
 
 const navigateBack = () => {
@@ -274,41 +321,75 @@ const navigateBack = () => {
 if (cancelBtn) cancelBtn.addEventListener('click', navigateBack);
 if (headerBackBtn) headerBackBtn.addEventListener('click', navigateBack);
 
-saveBtn.addEventListener('click', async () => {
+// Fonction de sauvegarde unique
+async function handleSaveOrder() {
     const items = [];
     const productRows = productList.querySelectorAll('.product-item-row');
+    
+    // Reset des erreurs visuelles
     document.querySelectorAll('.class-selector').forEach(el => el.style.borderColor = '');
+    
     for (const row of productRows) {
         const input = row.querySelector('.quantity-input');
-        const quantity = parseInt(input.value);
+        // Gestion valeur vide ou texte
+        const quantity = input.value === '' ? 0 : parseInt(input.value);
+        
         if (quantity > 0) {
             const key = input.dataset.key;
             const selector = row.querySelector('.class-selector');
             let classChoice = null;
+            
+            // Validation du sélecteur de classe obligatoire
             if (selector && selector.value === "") {
                 const product = getProductFromCatalog(key);
                 alert(`Veuillez choisir une classe pour "${product.name}".`);
                 selector.style.borderColor = "#dc3545";
+                
+                // Scroll vers l'élément en erreur pour le montrer à l'utilisateur
+                row.scrollIntoView({ behavior: 'smooth', block: 'center' });
                 selector.focus();
-                return;
+                return; // On arrête tout
             }
+            
             if(selector) classChoice = selector.value;
             
             const product = getProductFromCatalog(key);
             if (!product) continue;
-            const item = { key, name: product.name, quantity, price: product.price };
+            
+            const item = { 
+                key, 
+                name: product.name, 
+                quantity, 
+                price: product.price 
+            };
+            
             if (classChoice) item.classChoice = classChoice;
             items.push(item);
         }
     }
+
+    // Récupération du total depuis l'affichage (on nettoie le symbole €)
+    // On prend le premier élément trouvé, ils ont tous la même valeur
+    const totalElement = document.querySelector('.total-display');
+    const totalText = totalElement ? totalElement.textContent.replace(' €', '').trim() : '0';
+    
     const orderData = {
         schoolId: currentOrderData.schoolId,
         studentIdentifier: currentOrderData.photoFileName,
         categoryName: currentOrderData.categoryName,
         items: items,
-        totalAmount: parseFloat(totalPriceEl.textContent)
+        totalAmount: parseFloat(totalText)
     };
+
     const result = await window.api.saveOrder(orderData);
-    if (result.success) navigateBack();
-    else alert(`Erreur sauvegarde : ${result.error}`);
-});
+    
+    if (result.success) {
+        navigateBack();
+    } else {
+        alert(`Erreur sauvegarde : ${result.error}`);
+    }
+}
+
+// Liaison de la fonction aux deux boutons
+saveBtn.addEventListener('click', handleSaveOrder);
+if(headerSaveBtn) headerSaveBtn.addEventListener('click', handleSaveOrder);

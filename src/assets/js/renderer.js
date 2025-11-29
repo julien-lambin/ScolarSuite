@@ -40,7 +40,11 @@ document.addEventListener('DOMContentLoaded', () => {
         configBtn.title = "Modifier les prix et produits";
         configBtn.addEventListener('click', (e) => {
             e.stopPropagation(); 
-            window.api.navigateToSchoolConfig(school.id);
+            // NOUVEAU : On passe le contexte "index"
+            window.api.navigateToSchoolConfig({
+                schoolId: school.id,
+                from: 'index'
+            });
         });
         actionsDiv.appendChild(configBtn);
 
